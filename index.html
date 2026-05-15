@@ -436,10 +436,25 @@ function switchTab(tab){
   renderHistory();
 }
 
-// getWeekOfMonth: returns 1-based week number within the month (week starts Monday)
+// getWeekOfMonth: returns 1-based week number within the month
 // Week 1 = days 1-7, Week 2 = 8-14, Week 3 = 15-21, Week 4 = 22-28, Week 5 = 29+
 function getWeekOfMonth(d){
   return Math.ceil(d.getDate()/7);
+}
+
+// getGroupingDate: use due_date_start for grouping if available, else fall back to generated_at
+// This ensures a reminder due on 1 May groups into May Week 1,
+// regardless of when it was generated.
+function getGroupingDate(rec){
+  if(rec.due_date_start){
+    // due_date_start is "YYYY-MM-DD" — parse as local date to avoid UTC shift
+    const parts=rec.due_date_start.split('-');
+    if(parts.length===3){
+      return new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
+    }
+  }
+  // Legacy fallback: use generated_at timestamp
+  return new Date(rec.generated_at||0);
 }
 
 function renderHistory(){
@@ -453,10 +468,11 @@ function renderHistory(){
   }
 
   // Group by month, then by week within month
-  // Structure: { "May 2026": { "Week 2": [key, key], "Week 3": [key] }, ... }
+  // Uses due_date_start for grouping so items sit in the correct month/week
+  // Structure: { "May 2026": { "Week 1": [key], "Week 2": [key, key] }, ... }
   const monthGroups={};
   keys.forEach(key=>{
-    const d=new Date(data[key].generated_at||0);
+    const d=getGroupingDate(data[key]);
     const mLabel=d.toLocaleString('en-GB',{month:'long',year:'numeric'}); // "May 2026"
     const wNum=getWeekOfMonth(d);
     const wLabel=`Week ${wNum}`;
