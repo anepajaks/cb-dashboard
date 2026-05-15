@@ -402,15 +402,21 @@ function doPasscode(){
 }
 document.getElementById('pc-input').addEventListener('keydown',e=>{if(e.key==='Enter')doPasscode();});
 
-window.addEventListener('firebaseReady',()=>{
+// Auto-login: if session exists, enter immediately, verify in background
+(function(){
   const stored=sessionStorage.getItem('cb_auth');
   if(stored){
-    window._get(window._ref(window._db,'config/passcode')).then(snap=>{
-      if(snap.val()===stored)enterApp();
-      else sessionStorage.removeItem('cb_auth');
-    }).catch(()=>{});
+    document.getElementById('passcode-screen').style.display='none';
+    function verifyAndEnter(){
+      window._get(window._ref(window._db,'config/passcode')).then(snap=>{
+        if(snap.val()===stored){ enterApp(); }
+        else{ sessionStorage.removeItem('cb_auth'); document.getElementById('passcode-screen').style.display='flex'; }
+      }).catch(()=>{ enterApp(); }); // if offline, trust session
+    }
+    if(window.firebaseReady) verifyAndEnter();
+    else window.addEventListener('firebaseReady', verifyAndEnter, {once:true});
   }
-});
+})();
 
 function enterApp(){
   document.getElementById('passcode-screen').style.display='none';
