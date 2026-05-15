@@ -422,6 +422,7 @@ function doDelete(){
 function closeConfirm(){document.getElementById('confirm-overlay').classList.remove('open');pendingDelete=null;}
 document.getElementById('confirm-overlay').addEventListener('click',function(e){if(e.target===this)closeConfirm();});
 function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent='✓ '+msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2800);}
+</script>
 
 </body>
 </html>
