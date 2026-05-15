@@ -253,24 +253,21 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   </div>
 </nav>
 
-<div id="app">
-  <div id="generate-view" class="view" style="display:none">
+<div id="app" style="display:none">
+
+  <div id="generate-view" class="view">
     <div class="gen-header">
-      <div class="gen-label">Reminder Generator</div>
-      <div class="gen-title">Generate Today's Reminder</div>
-      <div class="gen-sub">Upload the Chargeback Fraud Report to build the live reminder dashboard.</div>
+      <div class="gen-label">Daily Reminder</div>
+      <div class="gen-title">Generate Reminder</div>
+      <div class="gen-sub">Upload the chargeback Excel file to build today's reminder dashboard.</div>
     </div>
     <div class="gen-card">
-      <div class="overwrite-box" id="overwrite-box">
-        <strong>⚠ Reminder already exists</strong>
-        <span id="overwrite-detail"></span>
-      </div>
       <div class="form-group">
-        <label class="form-label">Excel File</label>
+        <label class="form-label">Upload Excel File</label>
         <div class="upload-zone" id="upload-zone">
           <input type="file" id="file-input" accept=".xlsx,.xls" onchange="handleFile(this)">
           <div class="upload-icon">📂</div>
-          <div class="upload-txt"><strong>Click to upload</strong> or drag & drop<br>.xlsx or .xls only</div>
+          <div class="upload-txt">Drag & drop or <strong>click to browse</strong><br>Supports .xlsx / .xls</div>
           <div class="upload-name" id="upload-name"></div>
         </div>
       </div>
@@ -281,6 +278,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
             <option value="">Loading names...</option>
           </select>
         </div>
+      </div>
+      <div class="overwrite-box" id="overwrite-box">
+        <strong>⚠ Existing reminder found</strong>
+        A reminder for this due date already exists. Generating will overwrite it.
       </div>
       <button class="gen-btn" id="gen-btn" disabled onclick="doGenerate()">GENERATE REMINDER</button>
     </div>
@@ -385,6 +386,19 @@ function timeAgo(ts){
 }
 function isUrgent(d){if(!d)return false;return(new Date(d)-new Date())/(1000*60*60*24)<=2;}
 
+// toISODate: returns "YYYY-MM-DD" from a Date object, using local date (no UTC shift)
+function toISODate(d){
+  const yyyy=d.getFullYear();
+  const mm=String(d.getMonth()+1).padStart(2,'0');
+  const dd=String(d.getDate()).padStart(2,'0');
+  return`${yyyy}-${mm}-${dd}`;
+}
+
+// formatDisplayDate: "16 May 2026" from a Date object
+function formatDisplayDate(d){
+  return d.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+}
+
 // PASSCODE — sessionStorage
 function doPasscode(){
   const val=document.getElementById('pc-input').value.trim();
@@ -403,7 +417,7 @@ function doPasscode(){
 }
 document.getElementById('pc-input').addEventListener('keydown',e=>{if(e.key==='Enter')doPasscode();});
 
-// Auto-login: if session exists, enter immediately, verify in background
+// Auto-login
 (function(){
   const stored=sessionStorage.getItem('cb_auth');
   if(stored){
@@ -412,7 +426,7 @@ document.getElementById('pc-input').addEventListener('keydown',e=>{if(e.key==='E
       window._get(window._ref(window._db,'config/passcode')).then(snap=>{
         if(snap.val()===stored){ enterApp(); }
         else{ sessionStorage.removeItem('cb_auth'); document.getElementById('passcode-screen').style.display='flex'; }
-      }).catch(()=>{ enterApp(); }); // if offline, trust session
+      }).catch(()=>{ enterApp(); });
     }
     if(window.firebaseReady) verifyAndEnter();
     else window.addEventListener('firebaseReady', verifyAndEnter, {once:true});
@@ -484,6 +498,7 @@ function handleFile(input){
         return obj;
       });
       window._excelRows=rows;
+      checkOverwrite();
       checkGenBtn();
       hideLoading();
     }catch(err){hideLoading();alert('Error reading file: '+err.message);}
@@ -507,6 +522,31 @@ function checkGenBtn(){
   document.getElementById('gen-btn').disabled=!(hasPic&&hasFile);
 }
 
+// Check if a reminder already exists for the derived key and show overwrite warning
+function checkOverwrite(){
+  if(!window._excelRows)return;
+  const rows=window._excelRows;
+  const actionable=['pending','pre-arbitration','pre-arbi'];
+  const filteredRows=rows.filter(row=>actionable.includes(String(row['Status']||'').trim().toLowerCase()));
+  if(!filteredRows.length)return;
+
+  // Find earliest due date to derive key (same logic as doGenerate)
+  let earliest=null;
+  filteredRows.forEach(row=>{
+    const raw=row['Due Date'];if(!raw)return;
+    try{const d=new Date(raw);if(!isNaN(d)&&(!earliest||d<earliest))earliest=d;}catch(e){}
+  });
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const previewKey=earliest
+    ?`${earliest.getDate()}_${months[earliest.getMonth()]}_${earliest.getFullYear()}`
+    :todayKey();
+
+  window._get(window._ref(window._db,`reminders/${previewKey}`)).then(snap=>{
+    const box=document.getElementById('overwrite-box');
+    box.classList.toggle('show',!!(snap.val()&&snap.val().cases));
+  }).catch(()=>{});
+}
+
 // GENERATE
 function doGenerate(){
   const pic=document.getElementById('pic-select').value;
@@ -522,17 +562,50 @@ function doGenerate(){
   });
   if(!filteredRows.length){hideLoading();alert('No Pending or Pre-Arbitration cases found in this file.');return;}
 
-  // Derive key from earliest due date in the file
+  // Collect all valid due dates to find earliest and latest
   const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  let earliest=null;
+  let earliest=null, latest=null;
   filteredRows.forEach(row=>{
     const raw=row['Due Date'];if(!raw)return;
-    try{const d=new Date(raw);if(!isNaN(d)&&(!earliest||d<earliest))earliest=d;}catch(e){}
+    try{
+      const d=new Date(raw);
+      if(isNaN(d))return;
+      if(!earliest||d<earliest)earliest=d;
+      if(!latest||d>latest)latest=d;
+    }catch(e){}
   });
+
+  // dbKey is always based on earliest due date (Saturday for 3-day batches)
   if(earliest){
     dbKey=`${earliest.getDate()}_${months[earliest.getMonth()]}_${earliest.getFullYear()}`;
   } else {
     dbKey=todayKey();
+  }
+
+  // due_date_start = earliest due date in ISO format (YYYY-MM-DD)
+  // due_date_end   = latest due date in ISO format (YYYY-MM-DD)
+  // If single due date, both are the same value
+  const dueDateStart=earliest?toISODate(earliest):null;
+  const dueDateEnd=latest?toISODate(latest):null;
+
+  // Human-readable deadline display
+  // Single date: "16 May 2026"
+  // Range: "16 – 18 May 2026"
+  let deadlineDisplay='';
+  if(earliest&&latest){
+    if(dueDateStart===dueDateEnd){
+      deadlineDisplay=formatDisplayDate(earliest);
+    } else {
+      // Same month/year: "16 – 18 May 2026"
+      // Different month: "30 Apr – 2 May 2026" (fallback)
+      const startDay=earliest.getDate();
+      const endStr=formatDisplayDate(latest);
+      if(earliest.getMonth()===latest.getMonth()&&earliest.getFullYear()===latest.getFullYear()){
+        deadlineDisplay=`${startDay} – ${endStr}`;
+      } else {
+        deadlineDisplay=`${formatDisplayDate(earliest)} – ${endStr}`;
+      }
+    }
   }
 
   const cases={};
@@ -551,18 +624,34 @@ function doGenerate(){
       pic:row['PIC']||'',remarks:row['Remarks']||''
     };
   });
+
   const record={
-    generated_by:pic, generated_at:Date.now(), key:dbKey,
-    deadline:earliest?earliest.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}):'',
-    cases, tick_states:{}
+    generated_by:pic,
+    generated_at:Date.now(),
+    key:dbKey,
+    deadline:deadlineDisplay,
+    due_date_start:dueDateStart,
+    due_date_end:dueDateEnd,
+    cases,
+    tick_states:{}
   };
+
   window._set(window._ref(window._db,`reminders/${dbKey}`),record).then(()=>{
-    // Also write lightweight metadata for home page
+    // Write lightweight metadata for home page — includes due_date_end for Ready logic
     return window._set(window._ref(window._db,`reminders_meta/${dbKey}`),{
-      generated_by:pic, generated_at:record.generated_at, cases:true
+      generated_by:pic,
+      generated_at:record.generated_at,
+      due_date_start:dueDateStart,
+      due_date_end:dueDateEnd,
+      deadline:deadlineDisplay,
+      cases:true
     });
   }).then(()=>{
-    dashData=record;hideLoading();showHero();listenTicks();toast('Reminder saved!');
+    dashData=record;
+    hideLoading();
+    showHero();
+    listenTicks();
+    toast('Reminder saved!');
   }).catch(err=>{hideLoading();alert('Firebase error: '+err.message);});
 }
 

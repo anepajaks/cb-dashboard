@@ -78,9 +78,9 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .settings-section:nth-child(3){animation-delay:.1s;}
 .settings-section:nth-child(4){animation-delay:.15s;}
 
-.section-head{padding:20px 28px;display:flex;align-items:center;justify-content:space-between;cursor:default;}
-.section-head.clickable{cursor:pointer;transition:background .2s;}
-.section-head.clickable:hover{background:var(--surface2);}
+/* All section heads are clickable and consistent */
+.section-head{padding:20px 28px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background .2s;}
+.section-head:hover{background:var(--surface2);}
 .section-title{font-size:15px;font-weight:700;margin-bottom:2px;}
 .section-desc{font-size:12px;color:var(--text-dim);line-height:1.5;}
 .section-chevron{font-size:16px;color:var(--text-muted);transition:transform .25s;flex-shrink:0;}
@@ -195,15 +195,16 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <div class="page-sub">Manage PIC names and team passcode.</div>
     </div>
 
-    <!-- 1. PIC NAMES -->
+    <!-- 1. PIC NAMES (collapsed by default) -->
     <div class="settings-section">
-      <div class="section-head">
+      <div class="section-head" onclick="togglePIC()" id="pic-head">
         <div>
-          <div class="section-title">PIC Names</div>
-          <div class="section-desc">Names shown in the "Who are you?" dropdown when generating.</div>
+          <div class="section-title">PIC Names <span id="pic-count-badge" style="font-size:12px;font-weight:400;color:var(--text-dim)"></span></div>
+          <div class="section-desc">Names shown in the "Who are you?" dropdown when generating. Click to expand.</div>
         </div>
+        <div class="section-chevron" id="pic-chevron">▾</div>
       </div>
-      <div class="section-body" id="pic-body">
+      <div class="section-body collapsed" id="pic-body">
         <div class="pic-list" id="pic-list"><div class="pic-empty">Loading...</div></div>
         <div class="pic-add-row">
           <input type="text" class="pic-add-input" id="pic-add-input" placeholder="Enter new name..." maxlength="50"
@@ -213,9 +214,9 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       </div>
     </div>
 
-    <!-- 2. CHANGE PASSCODE (collapsed) -->
+    <!-- 2. CHANGE PASSCODE (collapsed by default) -->
     <div class="settings-section">
-      <div class="section-head clickable" onclick="togglePasscode()" id="pass-head">
+      <div class="section-head" onclick="togglePasscode()" id="pass-head">
         <div>
           <div class="section-title">Change Passcode</div>
           <div class="section-desc">Requires current passcode. Click to expand.</div>
@@ -244,9 +245,9 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       </div>
     </div>
 
-    <!-- 3. SYSTEM STATUS -->
+    <!-- 3. SYSTEM STATUS (always visible, no toggle needed) -->
     <div class="settings-section">
-      <div class="section-head">
+      <div class="section-head" style="cursor:default;" onclick="">
         <div>
           <div class="section-title">System Status</div>
           <div class="section-desc">Connection and configuration info.</div>
@@ -312,7 +313,7 @@ function doPasscode(){
 }
 document.getElementById('pc-input').addEventListener('keydown',e=>{if(e.key==='Enter')doPasscode();});
 
-// Auto-login: if session exists, enter immediately, verify in background
+// Auto-login
 (function(){
   const stored=sessionStorage.getItem('cb_auth');
   if(stored){
@@ -321,7 +322,7 @@ document.getElementById('pc-input').addEventListener('keydown',e=>{if(e.key==='E
       window._get(window._ref(window._db,'config/passcode')).then(snap=>{
         if(snap.val()===stored){ enterApp(); }
         else{ sessionStorage.removeItem('cb_auth'); document.getElementById('passcode-screen').style.display='flex'; }
-      }).catch(()=>{ enterApp(); }); // if offline, trust session
+      }).catch(()=>{ enterApp(); });
     }
     if(window.firebaseReady) verifyAndEnter();
     else window.addEventListener('firebaseReady', verifyAndEnter, {once:true});
@@ -336,7 +337,16 @@ function enterApp(){
 }
 function logout(){sessionStorage.removeItem('cb_auth');location.reload();}
 
-// PASSCODE TOGGLE
+// PIC SECTION TOGGLE
+function togglePIC(){
+  const body=document.getElementById('pic-body');
+  const chevron=document.getElementById('pic-chevron');
+  const isCollapsed=body.classList.contains('collapsed');
+  body.classList.toggle('collapsed',!isCollapsed);
+  chevron.classList.toggle('open',isCollapsed);
+}
+
+// PASSCODE SECTION TOGGLE
 function togglePasscode(){
   const body=document.getElementById('pass-body');
   const chevron=document.getElementById('pass-chevron');
@@ -394,7 +404,12 @@ function loadPICs(){
   });
 }
 function renderPICs(){
-  document.getElementById('pic-count').textContent=picList.length;
+  // Update both the inline badge and the system status count
+  const countEl=document.getElementById('pic-count');
+  const badgeEl=document.getElementById('pic-count-badge');
+  if(countEl)countEl.textContent=picList.length;
+  if(badgeEl)badgeEl.textContent=picList.length?`(${picList.length})`:'';
+
   const list=document.getElementById('pic-list');
   if(!picList.length){list.innerHTML='<div class="pic-empty">No names yet. Add one below.</div>';return;}
   list.innerHTML=picList.map((name,i)=>`

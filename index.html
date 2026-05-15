@@ -99,25 +99,35 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .history-tab{padding:8px 20px;border-radius:8px;font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text-dim);transition:all .2s;}
 .history-tab.active{background:var(--amber);color:#0a0a0f;font-weight:600;}
 .history-list{display:flex;flex-direction:column;gap:10px;animation:fadeUp .4s ease .25s both;}
-.history-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 24px;display:flex;align-items:center;justify-content:space-between;transition:all .2s;box-shadow:0 1px 4px var(--shadow);}
-.history-item:hover{border-color:rgba(245,166,35,.3);transform:translateX(4px);}
-.history-item-left{display:flex;align-items:center;gap:16px;}
-.history-icon{width:38px;height:38px;background:var(--amber-dim);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
-.history-title{font-size:14px;font-weight:600;margin-bottom:3px;}
-.history-meta{font-size:11px;color:var(--text-dim);}
-.history-right{text-align:right;}
-.history-time{font-size:11px;color:var(--text-muted);}
-.history-ago{font-size:11px;color:var(--amber);margin-top:2px;}
-.empty-state{text-align:center;padding:48px;color:var(--text-muted);font-size:12px;letter-spacing:1px;border:1px dashed var(--border);border-radius:var(--radius-lg);}
-.empty-icon{font-size:28px;margin-bottom:10px;opacity:.4;}
-.month-group{margin-bottom:28px;}
-.month-label{font-size:10px;letter-spacing:3px;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px;padding:0 4px;}
-.history-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;transition:all .2s;box-shadow:0 1px 4px var(--shadow);margin-bottom:8px;}
+
+/* COLLAPSIBLE MONTH GROUP */
+.month-group{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:var(--surface);}
+.month-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:none;border:none;color:var(--text);font-family:var(--font);font-size:11px;font-weight:600;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:background .2s;}
+.month-toggle:hover{background:var(--surface2);}
+.month-toggle-left{display:flex;align-items:center;gap:10px;}
+.month-count{font-size:10px;letter-spacing:1px;color:var(--text-muted);font-weight:400;}
+.month-chevron{font-size:12px;color:var(--text-muted);transition:transform .25s;flex-shrink:0;}
+.month-chevron.open{transform:rotate(180deg);}
+.month-body{display:none;border-top:1px solid var(--border);padding:12px;}
+.month-body.open{display:block;}
+
+/* COLLAPSIBLE WEEK GROUP */
+.week-group{margin-bottom:8px;}
+.week-group:last-child{margin-bottom:0;}
+.week-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);font-family:var(--font);font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);cursor:pointer;transition:all .2s;}
+.week-toggle:hover{border-color:rgba(245,166,35,.25);color:var(--text);}
+.week-chevron{font-size:11px;color:var(--text-muted);transition:transform .25s;flex-shrink:0;}
+.week-chevron.open{transform:rotate(180deg);}
+.week-body{display:none;padding-top:6px;}
+.week-body.open{display:block;}
+
+/* HISTORY ITEMS */
+.history-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;transition:all .2s;box-shadow:0 1px 4px var(--shadow);margin-bottom:6px;cursor:pointer;}
 .history-item:last-child{margin-bottom:0;}
 .history-item:hover{border-color:rgba(245,166,35,.3);transform:translateX(4px);}
-.history-item-left{display:flex;align-items:center;gap:16px;}
-.history-icon{width:38px;height:38px;background:var(--amber-dim);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
-.history-title{font-size:14px;font-weight:600;margin-bottom:3px;}
+.history-item-left{display:flex;align-items:center;gap:14px;}
+.history-icon{width:36px;height:36px;background:var(--amber-dim);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.history-title{font-size:13px;font-weight:600;margin-bottom:2px;}
 .history-meta{font-size:11px;color:var(--text-dim);}
 .history-right{display:flex;align-items:center;gap:14px;}
 .history-time-wrap{text-align:right;}
@@ -125,6 +135,11 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .history-ago{font-size:11px;color:var(--amber);margin-top:2px;}
 .delete-btn{width:30px;height:30px;border-radius:7px;background:none;border:1px solid transparent;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .2s;flex-shrink:0;}
 .delete-btn:hover{border-color:rgba(229,83,83,.3);color:var(--red);background:rgba(229,83,83,.08);}
+
+.empty-state{text-align:center;padding:48px;color:var(--text-muted);font-size:12px;letter-spacing:1px;border:1px dashed var(--border);border-radius:var(--radius-lg);}
+.empty-icon{font-size:28px;margin-bottom:10px;opacity:.4;}
+
+/* CONFIRM */
 .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:100;display:none;align-items:center;justify-content:center;padding:20px;}
 .confirm-overlay.open{display:flex;}
 .confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;max-width:360px;width:100%;text-align:center;animation:fadeUp .25s ease forwards;box-shadow:0 8px 40px var(--shadow);}
@@ -253,8 +268,6 @@ let currentTab='reminder', allReminders={}, allListings={};
 let pendingDelete=null;
 
 // HELPERS
-function todayKey(){const d=new Date();return `${d.getDate()}_${d.toLocaleString('en-GB',{month:'short'})}_${d.getFullYear()}`;}
-function monthKey(){const d=new Date();return `${d.toLocaleString('en-GB',{month:'long'})}_${d.getFullYear()}`;}
 function formatDate(ts){if(!ts)return'—';return new Date(ts).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}
 function timeAgo(ts){
   const diff=Date.now()-ts, s=Math.floor(diff/1000);
@@ -262,6 +275,41 @@ function timeAgo(ts){
   const m=Math.floor(s/60); if(m<60)return`${m} minute${m>1?'s':''} ago`;
   const h=Math.floor(m/60); if(h<24)return`${h} hour${h>1?'s':''} ago`;
   const day=Math.floor(h/24); return`${day} day${day>1?'s':''} ago`;
+}
+
+// todayISO: returns "YYYY-MM-DD" for today using local date (no UTC shift)
+function todayISO(){
+  const d=new Date();
+  const yyyy=d.getFullYear();
+  const mm=String(d.getMonth()+1).padStart(2,'0');
+  const dd=String(d.getDate()).padStart(2,'0');
+  return`${yyyy}-${mm}-${dd}`;
+}
+
+// isReminderReadyToday: returns true if today falls within [due_date_start, due_date_end]
+// Falls back to key-based check for old records that don't have due_date_end yet
+function isReminderReadyToday(rec, key){
+  if(!rec||!rec.cases)return false;
+  const today=todayISO();
+
+  // New records: use due_date_start and due_date_end fields
+  if(rec.due_date_end){
+    const start=rec.due_date_start||rec.due_date_end;
+    return today>=start&&today<=rec.due_date_end;
+  }
+
+  // Legacy fallback: parse key format "16_May_2026" and compare to today
+  // Key is based on earliest due date — for single-day reminders this is sufficient
+  // For old 3-day reminders without due_date_end we cannot reliably detect — show as not ready
+  if(!key)return false;
+  try{
+    const parts=key.split('_');
+    if(parts.length!==3)return false;
+    const d=new Date(`${parts[1]} ${parts[0]}, ${parts[2]}`);
+    if(isNaN(d))return false;
+    const keyISO=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    return keyISO===today;
+  }catch(e){return false;}
 }
 
 // PASSCODE — sessionStorage
@@ -290,7 +338,7 @@ function doPasscode(){
 }
 document.getElementById('pc-input').addEventListener('keydown',e=>{if(e.key==='Enter')doPasscode();});
 
-// Auto-login: if session exists, enter immediately, verify in background
+// Auto-login
 (function(){
   const stored=sessionStorage.getItem('cb_auth');
   if(stored){
@@ -316,7 +364,7 @@ function enterApp(){
 }
 function logout(){sessionStorage.removeItem('cb_auth');location.reload();}
 
-// DATA — fetch metadata only, not full cases
+// DATA — fetch metadata only
 function loadData(){
   window._get(window._ref(window._db,'reminders_meta')).then(snap=>{
     allReminders=snap.val()||{};
@@ -333,18 +381,40 @@ function loadData(){
 
 // STATUS CARDS
 function updateReminderCard(){
-  const keys=Object.keys(allReminders).sort((a,b)=>(allReminders[b].generated_at||0)-(allReminders[a].generated_at||0));
-  const key=keys[0], rec=key?allReminders[key]:null;
-  document.getElementById('reminder-badge').className='status-badge '+(rec&&rec.cases?'ready':'missing');
-  document.getElementById('reminder-badge').textContent=rec&&rec.cases?'Ready':'Not generated';
-  document.getElementById('reminder-title').textContent=rec&&rec.cases?key.replace(/_/g,' '):'No reminders yet';
-  document.getElementById('reminder-meta').innerHTML=rec&&rec.cases
-    ?`Generated by <strong>${rec.generated_by}</strong><br>${timeAgo(rec.generated_at)}`
-    :'No reminder generated yet';
-  document.getElementById('reminder-actions').innerHTML=rec&&rec.cases
-    ?`<a href="reminder.html?key=${key}" class="card-btn secondary">View Reminder →</a>`
-    :`<a href="reminder.html" class="card-btn primary">Go to Reminder →</a>`;
+  // Find a reminder where today falls within its due date range
+  const keys=Object.keys(allReminders);
+  let todayKey=null;
+  let todayRec=null;
+  keys.forEach(k=>{
+    if(isReminderReadyToday(allReminders[k],k)){
+      // If multiple match (edge case), prefer latest generated_at
+      if(!todayRec||(allReminders[k].generated_at||0)>(todayRec.generated_at||0)){
+        todayKey=k;
+        todayRec=allReminders[k];
+      }
+    }
+  });
+
+  const isReady=!!(todayRec&&todayRec.cases);
+  document.getElementById('reminder-badge').className='status-badge '+(isReady?'ready':'missing');
+  document.getElementById('reminder-badge').textContent=isReady?'Ready':'Not generated';
+
+  if(isReady){
+    // Show the deadline label if available, else fall back to key
+    const label=todayRec.deadline||todayKey.replace(/_/g,' ');
+    document.getElementById('reminder-title').textContent=label;
+    document.getElementById('reminder-meta').innerHTML=
+      `Generated by <strong>${todayRec.generated_by}</strong><br>${timeAgo(todayRec.generated_at)}`;
+    document.getElementById('reminder-actions').innerHTML=
+      `<a href="reminder.html?key=${todayKey}" class="card-btn secondary">View Reminder →</a>`;
+  } else {
+    document.getElementById('reminder-title').textContent='No reminder for today';
+    document.getElementById('reminder-meta').innerHTML='No reminder generated for today yet';
+    document.getElementById('reminder-actions').innerHTML=
+      `<a href="reminder.html" class="card-btn primary">Go to Reminder →</a>`;
+  }
 }
+
 function updateListingCard(){
   const keys=Object.keys(allListings).sort((a,b)=>(allListings[b].generated_at||0)-(allListings[a].generated_at||0));
   const key=keys[0], rec=key?allListings[key]:null;
@@ -359,49 +429,116 @@ function updateListingCard(){
     :`<a href="listing.html" class="card-btn soon" style="opacity:.4;pointer-events:none">Coming Soon</a>`;
 }
 
-// HISTORY
+// HISTORY — Month/Week collapsible
 function switchTab(tab){
   currentTab=tab;
   document.querySelectorAll('.history-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='reminder')||(i===1&&tab==='listing')));
   renderHistory();
 }
+
+// getWeekOfMonth: returns 1-based week number within the month (week starts Monday)
+// Week 1 = days 1-7, Week 2 = 8-14, Week 3 = 15-21, Week 4 = 22-28, Week 5 = 29+
+function getWeekOfMonth(d){
+  return Math.ceil(d.getDate()/7);
+}
+
 function renderHistory(){
   const list=document.getElementById('history-list');
   const data=currentTab==='reminder'?allReminders:allListings;
   const keys=Object.keys(data).sort((a,b)=>(data[b].generated_at||0)-(data[a].generated_at||0));
+
   if(!keys.length){
     list.innerHTML=`<div class="empty-state"><div class="empty-icon">${currentTab==='reminder'?'🔔':'📊'}</div>No ${currentTab}s generated yet</div>`;
     return;
   }
-  const groups={};
+
+  // Group by month, then by week within month
+  // Structure: { "May 2026": { "Week 2": [key, key], "Week 3": [key] }, ... }
+  const monthGroups={};
   keys.forEach(key=>{
     const d=new Date(data[key].generated_at||0);
-    const mKey=d.toLocaleString('en-GB',{month:'long',year:'numeric'});
-    if(!groups[mKey])groups[mKey]=[];
-    groups[mKey].push(key);
+    const mLabel=d.toLocaleString('en-GB',{month:'long',year:'numeric'}); // "May 2026"
+    const wNum=getWeekOfMonth(d);
+    const wLabel=`Week ${wNum}`;
+    if(!monthGroups[mLabel])monthGroups[mLabel]={};
+    if(!monthGroups[mLabel][wLabel])monthGroups[mLabel][wLabel]=[];
+    monthGroups[mLabel][wLabel].push(key);
   });
+
   const icon=currentTab==='reminder'?'🔔':'📊';
   const target=currentTab==='reminder'?'reminder.html':'listing.html';
-  list.innerHTML=Object.keys(groups).map(month=>{
-    const items=groups[month].map(key=>{
-      const rec=data[key];
-      return`<div class="history-item" onclick="window.location.href='${target}?key=${key}'" style="cursor:pointer;">
-        <div class="history-item-left">
-          <div class="history-icon">${icon}</div>
-          <div><div class="history-title">${key.replace(/_/g,' ')}</div><div class="history-meta">By ${rec.generated_by||'—'}</div></div>
-        </div>
-        <div class="history-right">
-          <div class="history-time-wrap">
-            <div class="history-time">${formatDate(rec.generated_at)}</div>
-            <div class="history-ago">${timeAgo(rec.generated_at)}</div>
+
+  // Render: months closed by default, weeks closed by default
+  list.innerHTML=Object.keys(monthGroups).map((month,mIdx)=>{
+    const weeks=monthGroups[month];
+    const totalInMonth=Object.values(weeks).reduce((sum,arr)=>sum+arr.length,0);
+
+    const weeksHTML=Object.keys(weeks).map((week,wIdx)=>{
+      const weekKeys=weeks[week];
+      const weekId=`week-${mIdx}-${wIdx}`;
+      const itemsHTML=weekKeys.map(key=>{
+        const rec=data[key];
+        // Use deadline label if available, else fall back to key
+        const displayTitle=rec.deadline||key.replace(/_/g,' ');
+        return`<div class="history-item" onclick="window.location.href='${target}?key=${key}'">
+          <div class="history-item-left">
+            <div class="history-icon">${icon}</div>
+            <div>
+              <div class="history-title">${displayTitle}</div>
+              <div class="history-meta">By ${rec.generated_by||'—'}</div>
+            </div>
           </div>
-          <button class="delete-btn" onclick="event.stopPropagation();confirmDelete('${currentTab}','${key}')" title="Delete">🗑</button>
-        </div>
+          <div class="history-right">
+            <div class="history-time-wrap">
+              <div class="history-time">${formatDate(rec.generated_at)}</div>
+              <div class="history-ago">${timeAgo(rec.generated_at)}</div>
+            </div>
+            <button class="delete-btn" onclick="event.stopPropagation();confirmDelete('${currentTab}','${key}')" title="Delete">🗑</button>
+          </div>
+        </div>`;
+      }).join('');
+
+      return`<div class="week-group">
+        <button class="week-toggle" onclick="toggleWeek('${weekId}')">
+          <span>${week} <span style="color:var(--text-muted);font-weight:400">(${weekKeys.length})</span></span>
+          <span class="week-chevron" id="wc-${weekId}">▾</span>
+        </button>
+        <div class="week-body" id="${weekId}">${itemsHTML}</div>
       </div>`;
     }).join('');
-    return`<div class="month-group"><div class="month-label">${month}</div>${items}</div>`;
+
+    const monthId=`month-${mIdx}`;
+    return`<div class="month-group">
+      <button class="month-toggle" onclick="toggleMonth('${monthId}')">
+        <span class="month-toggle-left">
+          <span>${month}</span>
+          <span class="month-count">${totalInMonth} item${totalInMonth>1?'s':''}</span>
+        </span>
+        <span class="month-chevron" id="mc-${monthId}">▾</span>
+      </button>
+      <div class="month-body" id="${monthId}">${weeksHTML}</div>
+    </div>`;
   }).join('');
 }
+
+// Toggle month collapse
+function toggleMonth(id){
+  const body=document.getElementById(id);
+  const chevron=document.getElementById('mc-'+id);
+  const isOpen=body.classList.contains('open');
+  body.classList.toggle('open',!isOpen);
+  chevron.classList.toggle('open',!isOpen);
+}
+
+// Toggle week collapse
+function toggleWeek(id){
+  const body=document.getElementById(id);
+  const chevron=document.getElementById('wc-'+id);
+  const isOpen=body.classList.contains('open');
+  body.classList.toggle('open',!isOpen);
+  chevron.classList.toggle('open',!isOpen);
+}
+
 function confirmDelete(type,key){
   pendingDelete={type,key};
   document.getElementById('confirm-msg').textContent=`Delete "${key.replace(/_/g,' ')}"? This cannot be undone.`;
@@ -416,7 +553,18 @@ function doDelete(){
   window._remove(window._ref(window._db,path)).then(()=>{
     return window._remove(window._ref(window._db,metaPath));
   }).then(()=>{
-    toast('Entry deleted');closeConfirm();
+    // Refresh local state and re-render
+    if(type==='reminder'){
+      delete allReminders[key];
+      updateReminderCard();
+      if(currentTab==='reminder')renderHistory();
+    } else {
+      delete allListings[key];
+      updateListingCard();
+      if(currentTab==='listing')renderHistory();
+    }
+    toast('Entry deleted');
+    closeConfirm();
   }).catch(e=>alert('Delete failed: '+e.message));
 }
 function closeConfirm(){document.getElementById('confirm-overlay').classList.remove('open');pendingDelete=null;}
