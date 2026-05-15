@@ -316,18 +316,19 @@ function enterApp(){
 }
 function logout(){sessionStorage.removeItem('cb_auth');location.reload();}
 
-// DATA
+// DATA — fetch metadata only, not full cases
 function loadData(){
-  window._onValue(window._ref(window._db,'reminders'),snap=>{
+  window._get(window._ref(window._db,'reminders_meta')).then(snap=>{
     allReminders=snap.val()||{};
     updateReminderCard();
     if(currentTab==='reminder') renderHistory();
-  });
-  window._onValue(window._ref(window._db,'listings'),snap=>{
+  }).catch(()=>{updateReminderCard();});
+
+  window._get(window._ref(window._db,'listings_meta')).then(snap=>{
     allListings=snap.val()||{};
     updateListingCard();
     if(currentTab==='listing') renderHistory();
-  });
+  }).catch(()=>{updateListingCard();});
 }
 
 // STATUS CARDS
@@ -411,7 +412,12 @@ function doDelete(){
   if(!pendingDelete)return;
   const {type,key}=pendingDelete;
   const path=type==='reminder'?`reminders/${key}`:`listings/${key}`;
-  window._remove(window._ref(window._db,path)).then(()=>{toast('Entry deleted');closeConfirm();}).catch(e=>alert('Delete failed: '+e.message));
+  const metaPath=type==='reminder'?`reminders_meta/${key}`:`listings_meta/${key}`;
+  window._remove(window._ref(window._db,path)).then(()=>{
+    return window._remove(window._ref(window._db,metaPath));
+  }).then(()=>{
+    toast('Entry deleted');closeConfirm();
+  }).catch(e=>alert('Delete failed: '+e.message));
 }
 function closeConfirm(){document.getElementById('confirm-overlay').classList.remove('open');pendingDelete=null;}
 document.getElementById('confirm-overlay').addEventListener('click',function(e){if(e.target===this)closeConfirm();});
