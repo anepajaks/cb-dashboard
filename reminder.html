@@ -574,7 +574,7 @@ function renderPICGrid(){
     const cList=picCases[pic],total=cList.length;
     let p=0,pa=0,cw=0,ca=0;
     cList.forEach(c=>{if(c.status==='Pending')p++;else if(c.status==='Pre-Arbitration')pa++;else if(c.status==='Closed-Merchant Won')cw++;else if(c.status==='Closed-Accept Chargeback')ca++;});
-    const ticked=cList.filter(c=>ticks[c.tran_id]).length;
+    const ticked=cList.filter(c=>ticks[c.ticket_id]).length;
     const pct=total?Math.round((ticked/total)*100):0;
     const initials=pic.split('@')[0].split('.').map(s=>s[0]?.toUpperCase()||'').join('').slice(0,2);
     const name=pic.split('@')[0].replace('.',' ').replace(/\b\w/g,l=>l.toUpperCase());
@@ -638,10 +638,10 @@ function renderCasesTable(caseList){
   if(!caseList.length){tbody.innerHTML='';noRes.style.display='block';return;}
   noRes.style.display='none';
   tbody.innerHTML=caseList.map(c=>{
-    const ticked=!!ticks[c.tran_id];
+    const ticked=!!ticks[c.ticket_id];
     const sc=c.status==='Pending'?'pending':c.status==='Pre-Arbitration'?'prearbi':c.status==='Closed-Merchant Won'?'closed-won':c.status==='Closed-Accept Chargeback'?'closed-accept':'';
     return`<tr>
-      <td><div class="tick-box ${ticked?'ticked':''}" onclick="toggleTick('${c.tran_id}',this)"></div></td>
+      <td><div class="tick-box ${ticked?'ticked':''}" onclick="toggleTick('${c.ticket_id}',this)"></div></td>
       <td>${/^\d+$/.test(c.ticket_id)?`<a class="case-ticket-link" href="https://razer-support.freshdesk.com/a/tickets/${c.ticket_id}" target="_blank" rel="noopener noreferrer"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>#${c.ticket_id}</a>`:`<span class="ticket-id">#${c.ticket_id} <span class="badge-anomaly">Source anomaly</span></span>`}</td>
       <td class="merchant">${c.merchant}</td>
       <td class="tran-id">${c.tran_id}</td>
@@ -654,10 +654,10 @@ function renderCasesTable(caseList){
 }
 
 // TICKS
-function toggleTick(tranId){
+function toggleTick(ticketId){
   const ticks=dashData.tick_states||{};
-  const newVal=!ticks[tranId];
-  window._set(window._ref(window._db,`reminders/${dbKey}/tick_states/${tranId}`),newVal||null)
+  const newVal=!ticks[ticketId];
+  window._set(window._ref(window._db,`reminders/${dbKey}/tick_states/${ticketId}`),newVal||null)
     .catch(e=>alert('Tick error: '+e.message));
 }
 function listenTicks(){
