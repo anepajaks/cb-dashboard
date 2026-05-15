@@ -194,6 +194,9 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .tick-box.ticked{background:var(--amber);border-color:var(--amber);}
 .tick-box.ticked::after{content:'✓';color:#0a0a0f;font-size:13px;font-weight:700;}
 .ticket-id,.tran-id{font-family:var(--font-mono);font-size:11px;color:var(--text-dim);}
+.case-ticket-link{font-family:var(--font-mono);font-size:11px;color:var(--amber);text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:opacity .2s;}
+.case-ticket-link:hover{opacity:.75;text-decoration:underline;}
+.badge-anomaly{font-size:9px;background:rgba(229,83,83,.12);color:var(--red);border:1px solid rgba(229,83,83,.2);border-radius:4px;padding:1px 5px;letter-spacing:.5px;margin-left:4px;}
 .merchant{font-weight:600;font-size:12px;}
 .due-urgent{color:var(--red);font-weight:600;}
 .no-results{text-align:center;padding:48px;color:var(--text-muted);font-size:12px;letter-spacing:1px;}
@@ -639,7 +642,7 @@ function renderCasesTable(caseList){
     const sc=c.status==='Pending'?'pending':c.status==='Pre-Arbitration'?'prearbi':c.status==='Closed-Merchant Won'?'closed-won':c.status==='Closed-Accept Chargeback'?'closed-accept':'';
     return`<tr>
       <td><div class="tick-box ${ticked?'ticked':''}" onclick="toggleTick('${c.tran_id}',this)"></div></td>
-      <td class="ticket-id">${c.ticket_id}</td>
+      <td>${/^\d+$/.test(c.ticket_id)?`<a class="case-ticket-link" href="https://razer-support.freshdesk.com/a/tickets/${c.ticket_id}" target="_blank" rel="noopener noreferrer"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>#${c.ticket_id}</a>`:`<span class="ticket-id">#${c.ticket_id} <span class="badge-anomaly">Source anomaly</span></span>`}</td>
       <td class="merchant">${c.merchant}</td>
       <td class="tran-id">${c.tran_id}</td>
       <td style="font-size:11px;color:var(--text-dim)">${c.channel}</td>
