@@ -164,6 +164,13 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+.sk{border-radius:6px;background:linear-gradient(90deg,var(--surface2) 25%,var(--border) 50%,var(--surface2) 75%);background-size:400px 100%;animation:shimmer 1.4s infinite linear;}
+.sk-pic-item{display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-bottom:8px;}
+.sk-pic-left{display:flex;align-items:center;gap:10px;}
+.sk-num{width:20px;height:10px;border-radius:4px;}
+.sk-name{height:14px;border-radius:4px;}
+.sk-btn-sm{width:28px;height:28px;border-radius:7px;}
 @media(max-width:768px){
   .nav{padding:0 20px;}
   .main{padding:28px 20px;}
@@ -221,7 +228,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         <div class="section-chevron" id="pic-chevron">▾</div>
       </div>
       <div class="section-body collapsed" id="pic-body">
-        <div class="pic-list" id="pic-list"><div class="pic-empty">Loading...</div></div>
+        <div class="pic-list" id="pic-list"><div id="pic-skeleton"><div class="sk-pic-item"><div class="sk-pic-left"><div class="sk sk-num"></div><div class="sk sk-name" style="width:100px"></div></div><div class="sk sk-btn-sm"></div></div><div class="sk-pic-item"><div class="sk-pic-left"><div class="sk sk-num"></div><div class="sk sk-name" style="width:70px"></div></div><div class="sk sk-btn-sm"></div></div><div class="sk-pic-item"><div class="sk-pic-left"><div class="sk sk-num"></div><div class="sk sk-name" style="width:85px"></div></div><div class="sk sk-btn-sm"></div></div><div class="sk-pic-item"><div class="sk-pic-left"><div class="sk sk-num"></div><div class="sk sk-name" style="width:60px"></div></div><div class="sk sk-btn-sm"></div></div><div class="sk-pic-item"><div class="sk-pic-left"><div class="sk sk-num"></div><div class="sk sk-name" style="width:90px"></div></div><div class="sk sk-btn-sm"></div></div></div></div>
         <div class="pic-add-row">
           <input type="text" class="pic-add-input" id="pic-add-input" placeholder="Enter new name..." maxlength="50"
             onkeydown="if(event.key==='Enter')addPIC()">
@@ -545,12 +552,12 @@ function loadPICs(){
   });
 }
 function renderPICs(){
-  // Update both the inline badge and the system status count
   const countEl=document.getElementById('pic-count');
   const badgeEl=document.getElementById('pic-count-badge');
   if(countEl)countEl.textContent=picList.length;
   if(badgeEl)badgeEl.textContent=picList.length?`(${picList.length})`:'';
-
+  const skeleton=document.getElementById('pic-skeleton');
+  if(skeleton)skeleton.remove();
   const list=document.getElementById('pic-list');
   if(!picList.length){list.innerHTML='<div class="pic-empty">No names yet. Add one below.</div>';return;}
   list.innerHTML=picList.map((name,i)=>`
