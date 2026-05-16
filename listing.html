@@ -8,7 +8,16 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  const app = initializeApp({ databaseURL: "https://cb-dashboard-f5363-default-rtdb.firebaseio.com" });
+  const firebaseConfig = {
+    apiKey: "AIzaSyBXNBdcPJQljFSczr_xe3utJfIawsew9ZA",
+    authDomain: "cb-dashboard-f5363.firebaseapp.com",
+    databaseURL: "https://cb-dashboard-f5363-default-rtdb.firebaseio.com",
+    projectId: "cb-dashboard-f5363",
+    storageBucket: "cb-dashboard-f5363.firebasestorage.app",
+    messagingSenderId: "374367815458",
+    appId: "1:374367815458:web:e3d2f4451331a171a5c77b"
+  };
+  const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const auth = getAuth(app);
   window._db=db;window._ref=ref;window._get=get;window._set=set;window._onValue=onValue;
@@ -745,7 +754,8 @@ function doPasscode(){
       }
     }).catch(function(){err.textContent='Connection error.';});
   }
-  if(window.firebaseReady)try_();else window.addEventListener('firebaseReady',try_,{once:true});
+  var execTry=function(){(window._authReady||Promise.resolve()).then(try_).catch(try_);};
+  if(window.firebaseReady)execTry();else window.addEventListener('firebaseReady',execTry,{once:true});
 }
 document.getElementById('pc-input').addEventListener('keydown',function(e){if(e.key==='Enter')doPasscode();});
 (function(){
@@ -759,8 +769,7 @@ document.getElementById('pc-input').addEventListener('keydown',function(e){if(e.
         else{sessionStorage.removeItem('cb_auth');document.getElementById('passcode-screen').style.display='flex';}
       }).catch(function(){enterApp();});
     };
-    if(window._authReady)window._authReady.then(doCheck).catch(doCheck);
-    else doCheck();
+    (window._authReady||Promise.resolve()).then(doCheck).catch(doCheck);
   }
   if(window.firebaseReady)verify();else window.addEventListener('firebaseReady',verify,{once:true});
 })();

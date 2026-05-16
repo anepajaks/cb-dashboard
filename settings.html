@@ -8,7 +8,16 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  const app = initializeApp({ databaseURL: "https://cb-dashboard-f5363-default-rtdb.firebaseio.com" });
+  const firebaseConfig = {
+    apiKey: "AIzaSyBXNBdcPJQljFSczr_xe3utJfIawsew9ZA",
+    authDomain: "cb-dashboard-f5363.firebaseapp.com",
+    databaseURL: "https://cb-dashboard-f5363-default-rtdb.firebaseio.com",
+    projectId: "cb-dashboard-f5363",
+    storageBucket: "cb-dashboard-f5363.firebasestorage.app",
+    messagingSenderId: "374367815458",
+    appId: "1:374367815458:web:e3d2f4451331a171a5c77b"
+  };
+  const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const auth = getAuth(app);
   window._db=db; window._ref=ref; window._get=get; window._set=set; window._onValue=onValue;
@@ -315,8 +324,9 @@ function doPasscode(){
       else{err.textContent='Incorrect passcode.';const inp=document.getElementById('pc-input');inp.classList.add('err');setTimeout(()=>inp.classList.remove('err'),400);}
     }).catch(()=>{err.textContent='Cannot connect.';});
   }
-  if(window.firebaseReady)tryLogin();
-  else window.addEventListener('firebaseReady',tryLogin,{once:true});
+  const execLogin=()=>{(window._authReady||Promise.resolve()).then(tryLogin).catch(tryLogin);};
+  if(window.firebaseReady)execLogin();
+  else window.addEventListener('firebaseReady',execLogin,{once:true});
 }
 document.getElementById('pc-input').addEventListener('keydown',e=>{if(e.key==='Enter')doPasscode();});
 
@@ -330,8 +340,7 @@ document.getElementById('pc-input').addEventListener('keydown',e=>{if(e.key==='E
         if(snap.val()===stored){ enterApp(); }
         else{ sessionStorage.removeItem('cb_auth'); document.getElementById('passcode-screen').style.display='flex'; }
       }).catch(()=>{ enterApp(); });
-      if(window._authReady)window._authReady.then(doCheck).catch(doCheck);
-      else doCheck();
+      (window._authReady||Promise.resolve()).then(doCheck).catch(doCheck);
     }
     if(window.firebaseReady) verifyAndEnter();
     else window.addEventListener('firebaseReady', verifyAndEnter, {once:true});
