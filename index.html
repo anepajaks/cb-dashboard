@@ -435,7 +435,18 @@ function updateReminderCard(){
 }
 
 function updateListingCard(){
-  const keys=Object.keys(allListings).sort((a,b)=>(allListings[b].generated_at||0)-(allListings[a].generated_at||0));
+  // Sort by month number (nearest past month first), not generated_at timestamp
+  const MONS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const now=new Date();
+  const nowNum=now.getFullYear()*100+(now.getMonth()+1);
+  const keys=Object.keys(allListings).sort((a,b)=>{
+    const pa=a.split('_'),pb=b.split('_');
+    const na=(parseInt(pa[1])||0)*100+(MONS.indexOf(pa[0])+1);
+    const nb=(parseInt(pb[1])||0)*100+(MONS.indexOf(pb[0])+1);
+    // Prefer nearest past month to today
+    const da=Math.abs(nowNum-na), db=Math.abs(nowNum-nb);
+    return da-db;
+  });
   const key=keys[0], rec=key?allListings[key]:null;
   document.getElementById('listing-badge').className='status-badge '+(rec&&rec.cases?'ready':'missing');
   document.getElementById('listing-badge').textContent=rec&&rec.cases?'Ready':'Not generated';

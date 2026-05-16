@@ -615,7 +615,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     </div>
   </div>
   <div class="an-grid">
-    <div class="an-card">
+    <div class="an-card full">
       <div class="an-card-ttl">
         Channel Breakdown
         <select id="ch-filter" onchange="renderChannelBars()">
@@ -803,6 +803,7 @@ function loadPICs(){
 function checkExisting(){
   var urlKey=new URLSearchParams(window.location.search).get('key');
   if(urlKey){
+    // Opened via ?key= (from home card or history) — load directly to hero
     dbKey=urlKey;showLoad('Loading listing...');
     window._get(window._ref(window._db,'listings/'+urlKey)).then(function(sn){
       hideLoad();var r=sn.val();
@@ -810,31 +811,9 @@ function checkExisting(){
       else{showView('v-generate');toast('Entry not found');}
     }).catch(function(){hideLoad();showView('v-generate');});
   } else {
-    showLoad('Loading...');
-    window._get(window._ref(window._db,'listings_meta')).then(function(sn){
-      hideLoad();
-      var meta=sn.val();
-      if(!meta||!Object.keys(meta).length){showView('v-generate');return;}
-      var now=new Date();
-      var nowNum=now.getFullYear()*100+(now.getMonth()+1);
-      var MONS=['January','February','March','April','May','June','July','August','September','October','November','December'];
-      var keys=Object.keys(meta).filter(function(k){return meta[k]&&meta[k].cases;});
-      if(!keys.length){showView('v-generate');return;}
-      var parsed=keys.map(function(k){
-        var p=k.split('_');var mi=MONS.indexOf(p[0]);var yr=parseInt(p[1])||0;
-        return{key:k,num:yr*100+(mi+1)};
-      });
-      var past=parsed.filter(function(p){return p.num<=nowNum;});
-      var bestKey;
-      if(past.length){past.sort(function(a,b){return b.num-a.num;});bestKey=past[0].key;}
-      else{parsed.sort(function(a,b){return a.num-b.num;});bestKey=parsed[0].key;}
-      dbKey=bestKey;
-      window._get(window._ref(window._db,'listings/'+bestKey)).then(function(sn2){
-        var r=sn2.val();
-        if(r&&r.cases){D=r;showHero();startListeners();}
-        else{showView('v-generate');loadPastListings();}
-      }).catch(function(){showView('v-generate');loadPastListings();});
-    }).catch(function(){hideLoad();showView('v-generate');});
+    // No key — always show generate view, load past listings below
+    showView('v-generate');
+    loadPastListings();
   }
 }
 
@@ -842,7 +821,14 @@ function renderHeroPastListings(){
   window._get(window._ref(window._db,'listings_meta')).then(function(sn){
     var meta=sn.val()||{};
     var others=Object.keys(meta).filter(function(k){return k!==dbKey&&meta[k]&&meta[k].cases;});
-    others.sort(function(a,b){return(meta[b].generated_at||0)-(meta[a].generated_at||0);});
+    // Sort by month number descending (March before February), not generated_at
+    var MONS2=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    others.sort(function(a,b){
+      var pa=a.split('_'),pb=b.split('_');
+      var na=(parseInt(pa[1])||0)*100+(MONS2.indexOf(pa[0])+1);
+      var nb=(parseInt(pb[1])||0)*100+(MONS2.indexOf(pb[0])+1);
+      return nb-na;
+    });
     var panel=document.getElementById('hero-past-panel');
     if(!panel){return;}
     if(!others.length){panel.style.display='none';return;}
