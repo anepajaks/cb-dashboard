@@ -7,10 +7,16 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   const app = initializeApp({ databaseURL: "https://cb-dashboard-f5363-default-rtdb.firebaseio.com" });
   const db = getDatabase(app);
+  const auth = getAuth(app);
   window._db=db;window._ref=ref;window._get=get;window._set=set;window._onValue=onValue;
-  window.firebaseReady=true;window.dispatchEvent(new Event('firebaseReady'));
+  signInAnonymously(auth).then(function(){
+    window.firebaseReady=true;window.dispatchEvent(new Event('firebaseReady'));
+  }).catch(function(e){console.error('Auth error:',e);
+    window.firebaseReady=true;window.dispatchEvent(new Event('firebaseReady'));
+  });
 </script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
@@ -398,8 +404,8 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <a class="nav-link" href="index.html">Home</a>
     <a class="nav-link" href="reminder.html">Reminder</a>
     <a class="nav-link active" href="listing.html">Listing</a>
-    <a class="nav-link" href="settings.html">Settings</a>
     <button class="nav-link an-nav-btn" id="an-nav-btn" onclick="goAnalytics('hero')">&#128202; Analytics</button>
+    <a class="nav-link" href="settings.html">Settings</a>
   </div>
   <div class="nav-right">
     <span class="nav-date" id="nav-date"></span>
@@ -509,6 +515,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   </div>
   <div class="sec-label">PIC Overview &mdash; Click to view &amp; action cases</div>
   <div class="pic-grid" id="pic-grid"></div>
+  <div id="hero-past-panel" style="display:none;margin-top:40px">
+    <div class="sec-label" style="margin-top:0">Other Listings</div>
+    <div id="hero-past-list"></div>
+  </div>
 </div>
 </div>
 
@@ -606,9 +616,15 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       </div>
       <div class="bar-list" id="ch-bars"></div>
     </div>
+  </div>
+  <div class="an-grid">
     <div class="an-card">
       <div class="an-card-ttl">Top 5 Merchants (Actionable)</div>
-      <div class="bar-list" id="merch-bars"></div>
+      <div class="bar-list" id="merch-bars2"></div>
+    </div>
+    <div class="an-card">
+      <div class="an-card-ttl">Status &times; Channel</div>
+      <div style="overflow-x:auto"><table class="wl-tbl" id="heatmap-tbl"><thead><tr id="heatmap-head"></tr></thead><tbody id="heatmap-body"></tbody></table></div>
     </div>
   </div>
   <div class="an-grid">
@@ -781,13 +797,52 @@ function checkExisting(){
       else{showView('v-generate');toast('Entry not found');}
     }).catch(function(){hideLoad();showView('v-generate');});
   } else {
-    var cmk=nowKey();
-    window._get(window._ref(window._db,'listings/'+cmk)).then(function(sn){
-      var r=sn.val();
-      if(r&&r.cases){dbKey=cmk;D=r;showHero();startListeners();}
-      else{showView('v-generate');loadPastListings();}
-    }).catch(function(){showView('v-generate');loadPastListings();});
+    showLoad('Loading...');
+    window._get(window._ref(window._db,'listings_meta')).then(function(sn){
+      hideLoad();
+      var meta=sn.val();
+      if(!meta||!Object.keys(meta).length){showView('v-generate');return;}
+      var now=new Date();
+      var nowNum=now.getFullYear()*100+(now.getMonth()+1);
+      var MONS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+      var keys=Object.keys(meta).filter(function(k){return meta[k]&&meta[k].cases;});
+      if(!keys.length){showView('v-generate');return;}
+      var parsed=keys.map(function(k){
+        var p=k.split('_');var mi=MONS.indexOf(p[0]);var yr=parseInt(p[1])||0;
+        return{key:k,num:yr*100+(mi+1)};
+      });
+      var past=parsed.filter(function(p){return p.num<=nowNum;});
+      var bestKey;
+      if(past.length){past.sort(function(a,b){return b.num-a.num;});bestKey=past[0].key;}
+      else{parsed.sort(function(a,b){return a.num-b.num;});bestKey=parsed[0].key;}
+      dbKey=bestKey;
+      window._get(window._ref(window._db,'listings/'+bestKey)).then(function(sn2){
+        var r=sn2.val();
+        if(r&&r.cases){D=r;showHero();startListeners();}
+        else{showView('v-generate');loadPastListings();}
+      }).catch(function(){showView('v-generate');loadPastListings();});
+    }).catch(function(){hideLoad();showView('v-generate');});
   }
+}
+
+function renderHeroPastListings(){
+  window._get(window._ref(window._db,'listings_meta')).then(function(sn){
+    var meta=sn.val()||{};
+    var others=Object.keys(meta).filter(function(k){return k!==dbKey&&meta[k]&&meta[k].cases;});
+    others.sort(function(a,b){return(meta[b].generated_at||0)-(meta[a].generated_at||0);});
+    var panel=document.getElementById('hero-past-panel');
+    if(!panel){return;}
+    if(!others.length){panel.style.display='none';return;}
+    panel.style.display='block';
+    document.getElementById('hero-past-list').innerHTML=others.map(function(k){
+      var r=meta[k];
+      return '<div class="past-item" onclick="loadListing(\'' + k + '\')" style="margin-bottom:8px">'
+        +'<div class="past-item-left"><div class="past-icon">&#128202;</div>'
+        +'<div><div class="past-title">'+k.replace('_',' ')+'</div>'
+        +'<div class="past-meta">By '+(r.generated_by||'—')+' &middot; '+fmtDate(r.generated_at)+'</div>'
+        +'</div></div><div class="past-arrow">&#8250;</div></div>';
+    }).join('');
+  }).catch(function(){});
 }
 
 function loadPastListings(){
@@ -1021,6 +1076,7 @@ function showHero(){
   updateProgress();
   renderPICGrid();
   buildChannelFilter();
+  renderHeroPastListings();
 }
 
 /* ═══════════════════════════════════════
@@ -1302,7 +1358,8 @@ function renderAnalytics(){
   renderDonut(cases);
   renderCurrency(cases);
   renderChannelBars();
-  renderMerchBars(cases);
+  renderMerchBars2(cases);
+  renderHeatmap(cases);
   renderWorkload(cases);
 }
 
@@ -1366,17 +1423,52 @@ function renderChannelBars(){
   }).join('');
 }
 
-function renderMerchBars(cases){
+function renderMerchBars2(cases){
   var act=cases.filter(function(c){return isAct(c.status);});
   var mm={};act.forEach(function(c){var m=c.merchant||'Unknown';mm[m]=(mm[m]||0)+1;});
   var top=Object.entries(mm).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
   var mx=top.length?top[0][1]:1;
-  document.getElementById('merch-bars').innerHTML=top.length?top.map(function(e){
+  var el=document.getElementById('merch-bars2');if(!el)return;
+  el.innerHTML=top.length?top.map(function(e){
     var pct=Math.round(e[1]/mx*100);
     return '<div class="bar-row"><div class="bar-lbl" title="'+e[0]+'">'+e[0]+'</div>'
       +'<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:var(--purple)"></div></div>'
       +'<div class="bar-val">'+e[1]+'</div></div>';
   }).join(''):'<div style="color:var(--text-muted);font-size:12px;padding:8px 0">No actionable cases</div>';
+}
+
+function renderHeatmap(cases){
+  var statuses=['Contest','Pending','Pre-Arbitration'];
+  var chMap={};
+  cases.forEach(function(c){
+    if(!isAct(c.status))return;
+    var ch=c.channel||'Unknown';
+    if(!chMap[ch])chMap[ch]={};
+    chMap[ch][c.status]=(chMap[ch][c.status]||0)+1;
+  });
+  var channels=Object.keys(chMap).sort(function(a,b){
+    var ta=(chMap[a]['Contest']||0)+(chMap[a]['Pending']||0)+(chMap[a]['Pre-Arbitration']||0);
+    var tb=(chMap[b]['Contest']||0)+(chMap[b]['Pending']||0)+(chMap[b]['Pre-Arbitration']||0);
+    return tb-ta;
+  }).slice(0,8);
+  var head=document.getElementById('heatmap-head');
+  var body=document.getElementById('heatmap-body');
+  if(!head||!body)return;
+  head.innerHTML='<th style="font-size:10px;letter-spacing:1px;color:var(--text-muted);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)">Channel</th>'
+    +statuses.map(function(s){
+      var col=s==='Contest'?'var(--purple)':s==='Pending'?'var(--orange)':'var(--blue)';
+      return '<th style="font-size:10px;letter-spacing:1px;color:'+col+';padding:8px 12px;text-align:center;border-bottom:1px solid var(--border)">'+s+'</th>';
+    }).join('');
+  body.innerHTML=channels.map(function(ch){
+    return '<tr><td style="font-size:11px;padding:9px 12px;color:var(--text-dim);border-bottom:1px solid rgba(42,42,61,.3)">'+ch+'</td>'
+      +statuses.map(function(s){
+        var v=chMap[ch][s]||0;
+        var col=s==='Contest'?'155,89,182':s==='Pending'?'243,156,18':'74,158,255';
+        var bg=v>0?'rgba('+col+',0.15)':'transparent';
+        var fc=v>0?(s==='Contest'?'var(--purple)':s==='Pending'?'var(--orange)':'var(--blue)'):'var(--text-muted)';
+        return '<td style="padding:9px 12px;text-align:center;font-size:12px;font-weight:'+(v>0?'700':'400')+';background:'+bg+';color:'+fc+';border-bottom:1px solid rgba(42,42,61,.3)">'+(v||'—')+'</td>';
+      }).join('')+'</tr>';
+  }).join('');
 }
 
 function renderWorkload(cases){
