@@ -12,7 +12,7 @@
   const db = getDatabase(app);
   const auth = getAuth(app);
   window._db=db;window._ref=ref;window._get=get;window._set=set;window._onValue=onValue;
-  signInAnonymously(auth).then(function(){
+  window._authReady=signInAnonymously(auth).then(function(){
     window.firebaseReady=true;window.dispatchEvent(new Event('firebaseReady'));
   }).catch(function(e){console.error('Auth error:',e);
     window.firebaseReady=true;window.dispatchEvent(new Event('firebaseReady'));
@@ -753,10 +753,14 @@ document.getElementById('pc-input').addEventListener('keydown',function(e){if(e.
   if(!s)return;
   document.getElementById('passcode-screen').style.display='none';
   function verify(){
-    window._get(window._ref(window._db,'config/passcode')).then(function(sn){
-      if(sn.val()===s)enterApp();
-      else{sessionStorage.removeItem('cb_auth');document.getElementById('passcode-screen').style.display='flex';}
-    }).catch(function(){enterApp();});
+    var doCheck=function(){
+      window._get(window._ref(window._db,'config/passcode')).then(function(sn){
+        if(sn.val()===s)enterApp();
+        else{sessionStorage.removeItem('cb_auth');document.getElementById('passcode-screen').style.display='flex';}
+      }).catch(function(){enterApp();});
+    };
+    if(window._authReady)window._authReady.then(doCheck).catch(doCheck);
+    else doCheck();
   }
   if(window.firebaseReady)verify();else window.addEventListener('firebaseReady',verify,{once:true});
 })();

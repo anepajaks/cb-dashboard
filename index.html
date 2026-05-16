@@ -12,7 +12,7 @@
   const db = getDatabase(app);
   const auth = getAuth(app);
   window._db=db; window._ref=ref; window._get=get; window._set=set; window._onValue=onValue; window._remove=remove;
-  signInAnonymously(auth).then(function(){
+  window._authReady=signInAnonymously(auth).then(function(){
     window.firebaseReady=true; window.dispatchEvent(new Event('firebaseReady'));
   }).catch(function(e){ console.error('Auth error:',e);
     window.firebaseReady=true; window.dispatchEvent(new Event('firebaseReady'));
@@ -352,10 +352,12 @@ document.getElementById('pc-input').addEventListener('keydown',e=>{if(e.key==='E
   if(stored){
     document.getElementById('passcode-screen').style.display='none';
     function verifyAndEnter(){
-      window._get(window._ref(window._db,'config/passcode')).then(snap=>{
+      const doCheck=()=>window._get(window._ref(window._db,'config/passcode')).then(snap=>{
         if(snap.val()===stored){ enterApp(); }
         else{ sessionStorage.removeItem('cb_auth'); document.getElementById('passcode-screen').style.display='flex'; }
       }).catch(()=>{ enterApp(); });
+      if(window._authReady)window._authReady.then(doCheck).catch(doCheck);
+      else doCheck();
     }
     if(window.firebaseReady) verifyAndEnter();
     else window.addEventListener('firebaseReady', verifyAndEnter, {once:true});
