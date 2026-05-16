@@ -491,20 +491,35 @@ function formatDisplayDate(d){
   return d.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
 }
 
+// HASH UTILITY — SHA-256 via Web Crypto (built into all modern browsers, no library needed)
+async function hashPasscode(plain){
+  const encoded=new TextEncoder().encode(plain);
+  const buf=await crypto.subtle.digest('SHA-256',encoded);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
 // PASSCODE
 function doPasscode(){
   const val=document.getElementById('pc-input').value.trim();
   const err=document.getElementById('pc-err');
   if(!val){err.textContent='Enter passcode.';return;}
-  function tryLogin(){
-    window._get(window._ref(window._db,'config/passcode')).then(snap=>{
-      const stored=snap.val();
-      if(!stored){window._set(window._ref(window._db,'config/passcode'),val).then(()=>{sessionStorage.setItem('cb_auth',val);enterApp();});}
-      else if(val===stored){sessionStorage.setItem('cb_auth',val);enterApp();}
-      else{err.textContent='Incorrect passcode.';const inp=document.getElementById('pc-input');inp.classList.add('err');setTimeout(()=>inp.classList.remove('err'),400);}
-    }).catch(()=>{err.textContent='Cannot connect.';});
+  async function tryLogin(){
+    try{
+      const stored=await window._get(window._ref(window._db,'config/passcode')).then(s=>s.val());
+      const hashed=await hashPasscode(val);
+      if(!stored){
+        await window._set(window._ref(window._db,'config/passcode'),hashed);
+        sessionStorage.setItem('cb_auth',val);enterApp();
+      } else if(hashed===stored){
+        sessionStorage.setItem('cb_auth',val);enterApp();
+      } else {
+        err.textContent='Incorrect passcode.';
+        const inp=document.getElementById('pc-input');
+        inp.classList.add('err');setTimeout(()=>inp.classList.remove('err'),400);
+      }
+    }catch(e){err.textContent='Cannot connect.';}
   }
-  var execLogin=function(){(window._authReady||Promise.resolve()).then(tryLogin).catch(tryLogin);};
+  const execLogin=()=>{(window._authReady||Promise.resolve()).then(tryLogin).catch(tryLogin);};
   if(window.firebaseReady)execLogin();else window.addEventListener('firebaseReady',execLogin,{once:true});
 }
 document.getElementById('pc-input').addEventListener('keydown',e=>{if(e.key==='Enter')doPasscode();});
@@ -513,11 +528,15 @@ document.getElementById('pc-input').addEventListener('keydown',e=>{if(e.key==='E
   const stored=sessionStorage.getItem('cb_auth');
   if(stored){
     document.getElementById('passcode-screen').style.display='none';
-    function verifyAndEnter(){
-      const doCheck=()=>window._get(window._ref(window._db,'config/passcode')).then(snap=>{
-        if(snap.val()===stored){enterApp();}
-        else{sessionStorage.removeItem('cb_auth');document.getElementById('passcode-screen').style.display='flex';}
-      }).catch(()=>{enterApp();});
+    async function verifyAndEnter(){
+      async function doCheck(){
+        try{
+          const dbHash=await window._get(window._ref(window._db,'config/passcode')).then(s=>s.val());
+          const inputHash=await hashPasscode(stored);
+          if(inputHash===dbHash){enterApp();}
+          else{sessionStorage.removeItem('cb_auth');document.getElementById('passcode-screen').style.display='flex';}
+        }catch(e){enterApp();}
+      }
       (window._authReady||Promise.resolve()).then(doCheck).catch(doCheck);
     }
     if(window.firebaseReady)verifyAndEnter();

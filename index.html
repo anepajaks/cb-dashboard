@@ -329,26 +329,34 @@ function isReminderReadyToday(rec, key){
   }catch(e){return false;}
 }
 
-// PASSCODE — sessionStorage
+// HASH UTILITY — SHA-256 via Web Crypto (built into all modern browsers, no library needed)
+async function hashPasscode(plain){
+  const encoded=new TextEncoder().encode(plain);
+  const buf=await crypto.subtle.digest('SHA-256',encoded);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// PASSCODE — sessionStorage stores raw input; comparisons always use hash
 function doPasscode(){
   const val=document.getElementById('pc-input').value.trim();
   const err=document.getElementById('pc-err');
   if(!val){err.textContent='Enter passcode.';return;}
-  function tryLogin(){
-    window._get(window._ref(window._db,'config/passcode')).then(snap=>{
-      const stored=snap.val();
+  async function tryLogin(){
+    try{
+      const stored=await window._get(window._ref(window._db,'config/passcode')).then(s=>s.val());
+      const hashed=await hashPasscode(val);
       if(!stored){
-        window._set(window._ref(window._db,'config/passcode'),val).then(()=>{
-          sessionStorage.setItem('cb_auth',val); enterApp();
-        });
-      } else if(val===stored){
+        // First-ever launch: save hash of initial passcode
+        await window._set(window._ref(window._db,'config/passcode'),hashed);
+        sessionStorage.setItem('cb_auth',val); enterApp();
+      } else if(hashed===stored){
         sessionStorage.setItem('cb_auth',val); enterApp();
       } else {
         err.textContent='Incorrect passcode.';
         const inp=document.getElementById('pc-input');
         inp.classList.add('err'); setTimeout(()=>inp.classList.remove('err'),400);
       }
-    }).catch(()=>{err.textContent='Cannot connect.';});
+    }catch(e){err.textContent='Cannot connect.';}
   }
   const execLogin=()=>{(window._authReady||Promise.resolve()).then(tryLogin).catch(tryLogin);};
   if(window.firebaseReady)execLogin();
@@ -356,16 +364,20 @@ function doPasscode(){
 }
 document.getElementById('pc-input').addEventListener('keydown',e=>{if(e.key==='Enter')doPasscode();});
 
-// Auto-login
+// Auto-login — re-hashes stored raw value and compares to DB hash
 (function(){
   const stored=sessionStorage.getItem('cb_auth');
   if(stored){
     document.getElementById('passcode-screen').style.display='none';
-    function verifyAndEnter(){
-      const doCheck=()=>window._get(window._ref(window._db,'config/passcode')).then(snap=>{
-        if(snap.val()===stored){ enterApp(); }
-        else{ sessionStorage.removeItem('cb_auth'); document.getElementById('passcode-screen').style.display='flex'; }
-      }).catch(()=>{ enterApp(); });
+    async function verifyAndEnter(){
+      async function doCheck(){
+        try{
+          const dbHash=await window._get(window._ref(window._db,'config/passcode')).then(s=>s.val());
+          const inputHash=await hashPasscode(stored);
+          if(inputHash===dbHash){ enterApp(); }
+          else{ sessionStorage.removeItem('cb_auth'); document.getElementById('passcode-screen').style.display='flex'; }
+        }catch(e){ enterApp(); }
+      }
       (window._authReady||Promise.resolve()).then(doCheck).catch(doCheck);
     }
     if(window.firebaseReady) verifyAndEnter();

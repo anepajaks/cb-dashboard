@@ -92,6 +92,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .settings-section:nth-child(2){animation-delay:.05s;}
 .settings-section:nth-child(3){animation-delay:.1s;}
 .settings-section:nth-child(4){animation-delay:.15s;}
+.settings-section:nth-child(5){animation-delay:.2s;}
 
 /* All section heads are clickable and consistent */
 .section-head{padding:20px 28px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background .2s;}
@@ -255,7 +256,43 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
             <input type="password" class="form-input" id="confirm-pass" placeholder="Re-enter new passcode" oninput="checkNewPass()">
             <div class="form-hint" id="confirm-pass-hint"></div>
           </div>
+          <div class="form-group">
+            <label class="form-label">Admin Code <span style="color:var(--amber);font-size:10px;letter-spacing:1px;">REQUIRED</span></label>
+            <input type="password" class="form-input" id="admin-code" placeholder="Enter admin code to authorise" oninput="checkNewPass();document.getElementById('admin-code-hint').textContent='';this.classList.remove('err');">
+            <div class="form-hint err" id="admin-code-hint"></div>
+          </div>
           <button class="save-btn" id="save-pass-btn" onclick="changePasscode()" disabled>SAVE PASSCODE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. ADMIN PASSCODE -->
+    <div class="settings-section">
+      <div class="section-head" onclick="toggleAdmin()" id="admin-head">
+        <div>
+          <div class="section-title">Admin Code <span style="font-size:11px;font-weight:400;color:var(--amber);letter-spacing:1px;">ADMIN ONLY</span></div>
+          <div class="section-desc">Change the admin authorisation code. Required to change the team passcode.</div>
+        </div>
+        <div class="section-chevron" id="admin-chevron">▾</div>
+      </div>
+      <div class="section-body collapsed" id="admin-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Current Admin Code</label>
+            <input type="password" class="form-input" id="admin-current" placeholder="Enter current admin code" oninput="checkAdminNewPass();document.getElementById('admin-current-hint').textContent='';this.classList.remove('err');">
+            <div class="form-hint err" id="admin-current-hint"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">New Admin Code</label>
+            <input type="password" class="form-input" id="admin-new" placeholder="Minimum 4 characters" oninput="checkAdminNewPass()">
+            <div class="form-hint" id="admin-new-hint">Minimum 4 characters</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm New Admin Code</label>
+            <input type="password" class="form-input" id="admin-confirm" placeholder="Re-enter new admin code" oninput="checkAdminNewPass()">
+            <div class="form-hint" id="admin-confirm-hint"></div>
+          </div>
+          <button class="save-btn" id="save-admin-btn" onclick="changeAdminPasscode()" disabled>SAVE ADMIN CODE</button>
         </div>
       </div>
     </div>
@@ -310,18 +347,26 @@ function toggleTheme(){
 }
 (function(){const t=localStorage.getItem('cb_theme')||'dark';const btn=document.getElementById('theme-btn');if(btn)btn.textContent=t==='dark'?'🌙':'☀️';})();
 
+// HASH UTILITY — SHA-256 via Web Crypto (built into all modern browsers, no library needed)
+async function hashPasscode(plain){
+  const encoded=new TextEncoder().encode(plain);
+  const buf=await crypto.subtle.digest('SHA-256',encoded);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
 // PASSCODE — sessionStorage
 function doPasscode(){
   const val=document.getElementById('pc-input').value.trim();
   const err=document.getElementById('pc-err');
   if(!val){err.textContent='Enter passcode.';return;}
-  function tryLogin(){
-    window._get(window._ref(window._db,'config/passcode')).then(snap=>{
-      const stored=snap.val();
-      if(!stored){window._set(window._ref(window._db,'config/passcode'),val).then(()=>{sessionStorage.setItem('cb_auth',val);enterApp();});}
-      else if(val===stored){sessionStorage.setItem('cb_auth',val);enterApp();}
+  async function tryLogin(){
+    try{
+      const stored=await window._get(window._ref(window._db,'config/passcode')).then(s=>s.val());
+      const hashed=await hashPasscode(val);
+      if(!stored){window._set(window._ref(window._db,'config/passcode'),hashed).then(()=>{sessionStorage.setItem('cb_auth',val);enterApp();});}
+      else if(hashed===stored){sessionStorage.setItem('cb_auth',val);enterApp();}
       else{err.textContent='Incorrect passcode.';const inp=document.getElementById('pc-input');inp.classList.add('err');setTimeout(()=>inp.classList.remove('err'),400);}
-    }).catch(()=>{err.textContent='Cannot connect.';});
+    }catch(e){err.textContent='Cannot connect.';}
   }
   const execLogin=()=>{(window._authReady||Promise.resolve()).then(tryLogin).catch(tryLogin);};
   if(window.firebaseReady)execLogin();
@@ -334,11 +379,15 @@ document.getElementById('pc-input').addEventListener('keydown',e=>{if(e.key==='E
   const stored=sessionStorage.getItem('cb_auth');
   if(stored){
     document.getElementById('passcode-screen').style.display='none';
-    function verifyAndEnter(){
-      const doCheck=()=>window._get(window._ref(window._db,'config/passcode')).then(snap=>{
-        if(snap.val()===stored){ enterApp(); }
-        else{ sessionStorage.removeItem('cb_auth'); document.getElementById('passcode-screen').style.display='flex'; }
-      }).catch(()=>{ enterApp(); });
+    async function verifyAndEnter(){
+      async function doCheck(){
+        try{
+          const dbHash=await window._get(window._ref(window._db,'config/passcode')).then(s=>s.val());
+          const inputHash=await hashPasscode(stored);
+          if(inputHash===dbHash){ enterApp(); }
+          else{ sessionStorage.removeItem('cb_auth'); document.getElementById('passcode-screen').style.display='flex'; }
+        }catch(e){ enterApp(); }
+      }
       (window._authReady||Promise.resolve()).then(doCheck).catch(doCheck);
     }
     if(window.firebaseReady) verifyAndEnter();
@@ -388,24 +437,99 @@ function checkNewPass(){
     else{cpHint.textContent='Does not match';cpHint.className='form-hint err';document.getElementById('confirm-pass').classList.add('err');document.getElementById('confirm-pass').classList.remove('ok');}
   }else{cpHint.textContent='';document.getElementById('confirm-pass').classList.remove('err','ok');}
   const op=document.getElementById('old-pass').value;
-  btn.disabled=!(op.length>=1&&np.length>=4&&np===cp);
+  const ac=document.getElementById('admin-code').value;
+  btn.disabled=!(op.length>=1&&np.length>=4&&np===cp&&ac.length>=1);
 }
-function changePasscode(){
+async function changePasscode(){
   const old=document.getElementById('old-pass').value.trim();
   const np=document.getElementById('new-pass').value.trim();
-  window._get(window._ref(window._db,'config/passcode')).then(snap=>{
-    if(old!==snap.val()){document.getElementById('old-pass-hint').textContent='Incorrect current passcode';document.getElementById('old-pass').classList.add('err');return;}
-    window._set(window._ref(window._db,'config/passcode'),np).then(()=>{
-      sessionStorage.setItem('cb_auth',np);
-      ['old-pass','new-pass','confirm-pass'].forEach(id=>document.getElementById(id).value='');
-      document.getElementById('save-pass-btn').disabled=true;
-      document.getElementById('new-pass-hint').textContent='Minimum 4 characters';
-      document.getElementById('new-pass-hint').className='form-hint';
-      document.getElementById('confirm-pass-hint').textContent='';
-      ['new-pass','confirm-pass'].forEach(id=>document.getElementById(id).classList.remove('ok','err'));
-      toast('Passcode updated','success');
-    });
-  }).catch(()=>toast('Error connecting','error'));
+  const ac=document.getElementById('admin-code').value.trim();
+  if(!ac){toast('Admin code required','error');return;}
+  try{
+    const [pcSnap,acSnap]=await Promise.all([
+      window._get(window._ref(window._db,'config/passcode')),
+      window._get(window._ref(window._db,'config/admin_passcode'))
+    ]);
+    const storedPc=pcSnap.val();
+    const storedAc=acSnap.val();
+    const oldHash=await hashPasscode(old);
+    const acHash=await hashPasscode(ac);
+
+    // Verify current passcode
+    if(oldHash!==storedPc){
+      document.getElementById('old-pass-hint').textContent='Incorrect current passcode';
+      document.getElementById('old-pass').classList.add('err');
+      return;
+    }
+    // Verify admin code — if no admin code set yet, allow first-time set
+    if(storedAc&&acHash!==storedAc){
+      document.getElementById('admin-code-hint').textContent='Incorrect admin code';
+      document.getElementById('admin-code').classList.add('err');
+      return;
+    }
+
+    const newHash=await hashPasscode(np);
+    await window._set(window._ref(window._db,'config/passcode'),newHash);
+    sessionStorage.setItem('cb_auth',np);
+    ['old-pass','new-pass','confirm-pass','admin-code'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('save-pass-btn').disabled=true;
+    document.getElementById('new-pass-hint').textContent='Minimum 4 characters';
+    document.getElementById('new-pass-hint').className='form-hint';
+    document.getElementById('confirm-pass-hint').textContent='';
+    document.getElementById('admin-code-hint').textContent='';
+    ['new-pass','confirm-pass','admin-code'].forEach(id=>document.getElementById(id).classList.remove('ok','err'));
+    toast('Passcode updated','success');
+  }catch(e){toast('Error connecting','error');}
+}
+
+// ADMIN PASSCODE CHANGE
+function toggleAdmin(){
+  const body=document.getElementById('admin-body');
+  const chevron=document.getElementById('admin-chevron');
+  const isCollapsed=body.classList.contains('collapsed');
+  body.classList.toggle('collapsed',!isCollapsed);
+  chevron.classList.toggle('open',isCollapsed);
+}
+function checkAdminNewPass(){
+  const np=document.getElementById('admin-new').value;
+  const cp=document.getElementById('admin-confirm').value;
+  const btn=document.getElementById('save-admin-btn');
+  const npH=document.getElementById('admin-new-hint');
+  const cpH=document.getElementById('admin-confirm-hint');
+  if(np.length>0&&np.length<4){npH.textContent='Minimum 4 characters';npH.className='form-hint err';}
+  else if(np.length>=4){npH.textContent='✓ Good';npH.className='form-hint ok';}
+  else{npH.textContent='Minimum 4 characters';npH.className='form-hint';}
+  if(cp.length>0){
+    if(cp===np){cpH.textContent='✓ Matches';cpH.className='form-hint ok';}
+    else{cpH.textContent='Does not match';cpH.className='form-hint err';}
+  }else{cpH.textContent='';}
+  const cur=document.getElementById('admin-current').value;
+  btn.disabled=!(cur.length>=1&&np.length>=4&&np===cp);
+}
+async function changeAdminPasscode(){
+  const cur=document.getElementById('admin-current').value.trim();
+  const np=document.getElementById('admin-new').value.trim();
+  try{
+    const snap=await window._get(window._ref(window._db,'config/admin_passcode'));
+    const stored=snap.val();
+    const curHash=await hashPasscode(cur);
+    // If no admin passcode exists yet — first-time setup, allow freely
+    if(stored&&curHash!==stored){
+      document.getElementById('admin-current-hint').textContent='Incorrect current admin code';
+      document.getElementById('admin-current').classList.add('err');
+      return;
+    }
+    const newHash=await hashPasscode(np);
+    await window._set(window._ref(window._db,'config/admin_passcode'),newHash);
+    ['admin-current','admin-new','admin-confirm'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('save-admin-btn').disabled=true;
+    document.getElementById('admin-new-hint').textContent='Minimum 4 characters';
+    document.getElementById('admin-new-hint').className='form-hint';
+    document.getElementById('admin-confirm-hint').textContent='';
+    document.getElementById('admin-current-hint').textContent='';
+    ['admin-current','admin-new','admin-confirm'].forEach(id=>document.getElementById(id).classList.remove('ok','err'));
+    toast('Admin code updated','success');
+  }catch(e){toast('Error connecting','error');}
 }
 
 // PIC MANAGEMENT
