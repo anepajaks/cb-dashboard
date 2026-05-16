@@ -184,7 +184,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   <div class="nav-links">
     <a href="index.html" class="nav-link active">Home</a>
     <a href="reminder.html" class="nav-link">Reminder</a>
-    <a href="listing.html" class="nav-link soon">Listing</a>
+    <a href="listing.html" class="nav-link">Listing</a>
     <a href="settings.html" class="nav-link">Settings</a>
   </div>
   <div class="nav-right">
@@ -426,7 +426,7 @@ function updateListingCard(){
     :'No listing generated yet';
   document.getElementById('listing-actions').innerHTML=rec&&rec.cases
     ?`<a href="listing.html?key=${key}" class="card-btn secondary">View Listing →</a>`
-    :`<a href="listing.html" class="card-btn soon" style="opacity:.4;pointer-events:none">Coming Soon</a>`;
+    :`<a href="listing.html" class="card-btn primary">Go to Listing →</a>`;
 }
 
 // HISTORY — Month/Week collapsible
