@@ -247,6 +247,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .case-ticket-link{font-family:var(--font-mono);font-size:11px;color:var(--amber);text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:opacity .2s;}
 .case-ticket-link:hover{opacity:.75;text-decoration:underline;}
 .badge-anomaly{font-size:9px;background:rgba(229,83,83,.12);color:var(--red);border:1px solid rgba(229,83,83,.2);border-radius:4px;padding:1px 5px;letter-spacing:.5px;margin-left:4px;}
+.trans-badge{display:inline-flex;align-items:center;margin-left:7px;font-size:10px;font-weight:600;letter-spacing:.5px;color:var(--amber);background:var(--amber-dim);border:1px solid rgba(245,166,35,.2);border-radius:4px;padding:2px 7px;cursor:pointer;transition:all .15s;vertical-align:middle;}
+.trans-badge:hover{background:rgba(245,166,35,.2);}
+.trans-sub-row td{background:rgba(245,166,35,.03);border-bottom:1px solid rgba(42,42,61,.3) !important;}
+[data-theme="light"] .trans-sub-row td{background:rgba(245,166,35,.04);}
 .merchant{font-weight:600;font-size:12px;}
 .due-urgent{color:var(--red);font-weight:600;}
 .no-results{text-align:center;padding:48px;color:var(--text-muted);font-size:12px;letter-spacing:1px;}
@@ -277,6 +281,17 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
+.sk{border-radius:6px;background:linear-gradient(90deg,var(--surface2) 25%,var(--border) 50%,var(--surface2) 75%);background-size:600px 100%;animation:shimmer 1.4s infinite linear;}
+.sk-stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:48px;}
+.sk-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;box-shadow:0 2px 8px var(--shadow);}
+.sk-pic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
+.sk-pic-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px 26px;box-shadow:0 2px 8px var(--shadow);}
+.sk-line{height:10px;border-radius:4px;display:block;}
+.sk-h14{height:14px;} .sk-h20{height:20px;} .sk-h28{height:28px;}
+.sk-w30{width:30%;} .sk-w50{width:50%;} .sk-w70{width:70%;} .sk-w40{width:40%;}
+.sk-circle{width:40px;height:40px;border-radius:10px;}
+.sk-bar{height:4px;border-radius:2px;margin:10px 0 6px;}
 @media(max-width:768px){
   .nav{padding:0 20px;} .nav-date{display:none;}
   .hero-section,.pd-section{padding:28px 20px;}
@@ -388,7 +403,15 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         </div>
       </div>
 
-      <div class="stats-row">
+      <!-- Stats skeleton -->
+      <div class="sk-stats-row" id="stats-skeleton">
+        <div class="sk-stat"><div class="sk sk-line sk-w30" style="margin-bottom:10px"></div><div class="sk sk-line sk-h28 sk-w50" style="margin-bottom:6px"></div><div class="sk sk-line sk-w40"></div></div>
+        <div class="sk-stat"><div class="sk sk-line sk-w30" style="margin-bottom:10px"></div><div class="sk sk-line sk-h28 sk-w50" style="margin-bottom:6px"></div><div class="sk sk-line sk-w40"></div></div>
+        <div class="sk-stat"><div class="sk sk-line sk-w30" style="margin-bottom:10px"></div><div class="sk sk-line sk-h28 sk-w50" style="margin-bottom:6px"></div><div class="sk sk-line sk-w40"></div></div>
+        <div class="sk-stat"><div class="sk sk-line sk-w30" style="margin-bottom:10px"></div><div class="sk sk-line sk-h28 sk-w50" style="margin-bottom:6px"></div><div class="sk sk-line sk-w40"></div></div>
+        <div class="sk-stat"><div class="sk sk-line sk-w30" style="margin-bottom:10px"></div><div class="sk sk-line sk-h28 sk-w50" style="margin-bottom:6px"></div><div class="sk sk-line sk-w40"></div></div>
+      </div>
+      <div class="stats-row" id="stats-row" style="display:none">
         <div class="stat-card c-amber"><div class="stat-label">Total Cases</div><div class="stat-val" id="s-total">0</div><div class="stat-sub">Actionable</div></div>
         <div class="stat-card c-red"><div class="stat-label">Pending</div><div class="stat-val" id="s-pending">0</div><div class="stat-sub">Awaiting action</div></div>
         <div class="stat-card c-blue"><div class="stat-label">Pre-Arbitration</div><div class="stat-val" id="s-prearbi">0</div><div class="stat-sub">Escalated</div></div>
@@ -396,7 +419,13 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         <div class="stat-card c-ticked"><div class="stat-label">Ticked</div><div class="stat-val" id="s-ticked">0</div><div class="stat-sub" id="s-ticked-sub">of 0 cases</div></div>
       </div>
       <div class="section-label">PIC Overview — Click to view cases</div>
-      <div class="pic-grid" id="pic-grid"></div>
+      <!-- PIC grid skeleton -->
+      <div class="sk-pic-grid" id="pic-grid-skeleton">
+        <div class="sk-pic-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:16px"><div class="sk sk-circle"></div><div style="flex:1"><div class="sk sk-line sk-h14 sk-w50" style="margin-bottom:6px"></div><div class="sk sk-line sk-w70"></div></div></div><div class="sk sk-bar"></div><div class="sk sk-line sk-w30" style="height:8px;margin-bottom:14px"></div><div style="display:flex;gap:8px"><div class="sk sk-line" style="width:80px;height:22px;border-radius:6px"></div><div class="sk sk-line" style="width:80px;height:22px;border-radius:6px"></div></div></div>
+        <div class="sk-pic-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:16px"><div class="sk sk-circle"></div><div style="flex:1"><div class="sk sk-line sk-h14 sk-w50" style="margin-bottom:6px"></div><div class="sk sk-line sk-w70"></div></div></div><div class="sk sk-bar"></div><div class="sk sk-line sk-w30" style="height:8px;margin-bottom:14px"></div><div style="display:flex;gap:8px"><div class="sk sk-line" style="width:80px;height:22px;border-radius:6px"></div><div class="sk sk-line" style="width:80px;height:22px;border-radius:6px"></div></div></div>
+        <div class="sk-pic-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:16px"><div class="sk sk-circle"></div><div style="flex:1"><div class="sk sk-line sk-h14 sk-w50" style="margin-bottom:6px"></div><div class="sk sk-line sk-w70"></div></div></div><div class="sk sk-bar"></div><div class="sk sk-line sk-w30" style="height:8px;margin-bottom:14px"></div><div style="display:flex;gap:8px"><div class="sk sk-line" style="width:80px;height:22px;border-radius:6px"></div></div></div>
+      </div>
+      <div class="pic-grid" id="pic-grid" style="display:none"></div>
     </div>
   </div>
 
@@ -694,20 +723,40 @@ function doGenerate(){
     }
   }
 
-  const cases={};
+  // Group rows by Ticket ID — each ticket can have multiple Tran IDs / Remarks
+  const casesMap={};
   filteredRows.forEach(r=>{
-    const tid=String(r['Tran ID']||r['Ticket ID']||Math.random());
+    const ticketId=String(r['Ticket ID']||'').trim()||('UNKNOWN_'+Math.random().toString(36).slice(2));
     const s=String(r['Status']||'').trim().toLowerCase();
-    cases[tid]={
-      ticket_id:r['Ticket ID']||'',date_received:r['Date Received']||'',
-      due_date:r['Due Date']||'',merchant:r['Merchant ID']||'',
-      reason:r['Reason']||'',channel:r['Channel']||'',
-      card_type:r['Card Type']||'',issuer:r['Issuer Bank']||'',
-      tran_id:tid,transaction_status:r['Transaction Status']||'',
-      status:s==='pending'?'Pending':'Pre-Arbitration',
-      sftp_status:r['SFTP status']||'',total_amt:r['Total Amt']||'',
-      dispute_amt:r['Dispute Amt']||'',pic:r['PIC']||'',remarks:r['Remarks']||''
-    };
+    const status=s==='pending'?'Pending':'Pre-Arbitration';
+    const tid=String(r['Tran ID']||'').trim();
+    const remark=String(r['Remarks']||'').trim();
+    if(!casesMap[ticketId]){
+      casesMap[ticketId]={
+        ticket_id:ticketId,
+        date_received:r['Date Received']||'',
+        due_date:r['Due Date']||'',
+        merchant:r['Merchant ID']||'',
+        reason:r['Reason']||'',
+        channel:r['Channel']||'',
+        card_type:r['Card Type']||'',
+        issuer:r['Issuer Bank']||'',
+        transaction_status:r['Transaction Status']||'',
+        status:status,
+        sftp_status:r['SFTP status']||'',
+        total_amt:r['Total Amt']||'',
+        dispute_amt:r['Dispute Amt']||'',
+        pic:r['PIC']||'',
+        trans:[]
+      };
+    }
+    if(tid||remark){casesMap[ticketId].trans.push({tran_id:tid,remarks:remark});}
+  });
+  // Convert to Firebase-safe keys
+  const cases={};
+  Object.values(casesMap).forEach(c=>{
+    const safeKey=c.ticket_id.replace(/[.#$[\]/]/g,'_');
+    cases[safeKey]=c;
   });
 
   const record={
@@ -761,6 +810,15 @@ function showHero(){
   document.getElementById('s-pending').textContent=p;
   document.getElementById('s-prearbi').textContent=pa;
   document.getElementById('s-closed').textContent=picSet.size;
+  // Hide skeletons, show real content
+  const statsSk=document.getElementById('stats-skeleton');
+  const statsRow=document.getElementById('stats-row');
+  const picGridSk=document.getElementById('pic-grid-skeleton');
+  const picGrid=document.getElementById('pic-grid');
+  if(statsSk)statsSk.style.display='none';
+  if(statsRow)statsRow.style.display='';
+  if(picGridSk)picGridSk.style.display='none';
+  if(picGrid)picGrid.style.display='';
   updateTickProgress();
   renderPICGrid();
 }
@@ -858,7 +916,12 @@ function filterCases(){
   const s=document.getElementById('filter-status').value;
   const all=Object.values(dashData.cases||{}).filter(c=>c.pic===currentPIC);
   filteredCases=all.filter(c=>{
-    const mq=!q||[c.ticket_id,c.merchant,c.tran_id,c.reason,c.status].some(v=>String(v).toLowerCase().includes(q));
+    // Search across ticket_id, merchant, channel, status, reason, and all tran_ids/remarks inside trans[]
+    const tranSearch=(Array.isArray(c.trans)?c.trans:[]).some(t=>
+      String(t.tran_id||'').toLowerCase().includes(q)||
+      String(t.remarks||'').toLowerCase().includes(q)
+    );
+    const mq=!q||tranSearch||[c.ticket_id,c.merchant,c.channel,c.reason,c.status].some(v=>String(v).toLowerCase().includes(q));
     return mq&&(!s||c.status===s);
   });
   renderCasesTable(filteredCases);
@@ -873,20 +936,46 @@ function renderCasesTable(caseList){
   tbody.innerHTML=caseList.map(c=>{
     const ticked=!!ticks[c.ticket_id];
     const sc=c.status==='Pending'?'pending':c.status==='Pre-Arbitration'?'prearbi':'';
+    const isNum=/^\d+$/.test(String(c.ticket_id));
+    const ticketHtml=isNum
+      ?`<a class="case-ticket-link" href="https://razer-support.freshdesk.com/a/tickets/${c.ticket_id}" target="_blank" rel="noopener noreferrer"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>#${c.ticket_id}</a>`
+      :`<span class="ticket-id">#${c.ticket_id} <span class="badge-anomaly">Source anomaly</span></span>`;
+    const trans=Array.isArray(c.trans)?c.trans:[];
+    const hasTrans=trans.length>0;
+    const safeId='tr_'+c.ticket_id.replace(/[^a-zA-Z0-9]/g,'_');
+    // Trans expand badge
+    const transBadge=hasTrans
+      ?`<span class="trans-badge" onclick="event.stopPropagation();toggleTrans('${safeId}')" id="badge_${safeId}">${trans.length} trans ▾</span>`
+      :'';
+    // Expanded sub-rows
+    const transRows=hasTrans?trans.map(t=>`
+      <tr class="trans-sub-row" id="sub_${safeId}" style="display:none">
+        <td></td><td colspan="2" style="padding-left:28px;font-size:11px;color:var(--text-muted);font-family:var(--font-mono)">${t.tran_id?t.tran_id:'—'}</td>
+        <td colspan="5" style="font-size:11px;color:var(--text-dim);font-style:italic">${t.remarks||'—'}</td>
+      </tr>`).join(''):'';
     return`<tr>
-      <td><div class="tick-box ${ticked?'ticked':''}" onclick="toggleTick('${c.ticket_id}',this)"></div></td>
-      <td>${/^\d+$/.test(c.ticket_id)?`<a class="case-ticket-link" href="https://razer-support.freshdesk.com/a/tickets/${c.ticket_id}" target="_blank" rel="noopener noreferrer"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>#${c.ticket_id}</a>`:`<span class="ticket-id">#${c.ticket_id} <span class="badge-anomaly">Source anomaly</span></span>`}</td>
+      <td><div class="tick-box ${ticked?'ticked':''}" onclick="toggleTick('${c.ticket_id}')"></div></td>
+      <td>${ticketHtml}${transBadge}</td>
       <td class="merchant">${c.merchant}</td>
-      <td class="tran-id">${c.tran_id}</td>
+      <td class="tran-id" style="color:var(--text-muted);font-size:11px">${hasTrans?trans.length+' tran'+(trans.length>1?'s':''):'—'}</td>
       <td style="font-size:11px;color:var(--text-dim)">${c.channel}</td>
       <td><span class="status-pill ${sc}">${c.status}</span></td>
       <td style="font-size:12px;font-weight:600">${c.dispute_amt}</td>
       <td class="${isUrgent(c.due_date)?'due-urgent':''}" style="font-size:11px">${c.due_date}</td>
-    </tr>`;
+    </tr>${transRows}`;
   }).join('');
 }
 
-// TICKS
+function toggleTrans(safeId){
+  const rows=document.querySelectorAll('#sub_'+safeId);
+  const badge=document.getElementById('badge_'+safeId);
+  if(!rows.length)return;
+  const isHidden=rows[0].style.display==='none';
+  rows.forEach(r=>{r.style.display=isHidden?'':'none';});
+  if(badge)badge.innerHTML=badge.innerHTML.replace(isHidden?'▾':'▴',isHidden?'▴':'▾');
+}
+
+// TICKS — keyed by ticket_id (1 tick per ticket regardless of tran count)
 function toggleTick(ticketId){
   const ticks=dashData.tick_states||{};
   const newVal=!ticks[ticketId];
@@ -910,8 +999,13 @@ function listenReminder(){
 // COPY
 function copyList(){
   if(!filteredCases.length)return;
-  const text=filteredCases.map(c=>`Ticket: ${c.ticket_id} | Merchant: ${c.merchant} | Tran: ${c.tran_id} | Status: ${c.status} | Amt: ${c.dispute_amt} | Due: ${c.due_date}`).join('\n');
-  navigator.clipboard.writeText(text).then(()=>{
+  const lines=[];
+  filteredCases.forEach(c=>{
+    const trans=Array.isArray(c.trans)?c.trans:[];
+    const tranStr=trans.map(t=>t.tran_id).filter(Boolean).join(', ')||'—';
+    lines.push(`Ticket: ${c.ticket_id} | Merchant: ${c.merchant} | Trans: ${tranStr} | Status: ${c.status} | Amt: ${c.dispute_amt} | Due: ${c.due_date}`);
+  });
+  navigator.clipboard.writeText(lines.join('\n')).then(()=>{
     const btn=document.getElementById('copy-btn');
     btn.textContent='✓ Copied!';btn.classList.add('copied');
     setTimeout(()=>{btn.textContent='Copy Case List';btn.classList.remove('copied');},2000);

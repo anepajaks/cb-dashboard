@@ -33,6 +33,7 @@
   --font-mono:"SF Mono",ui-monospace,Menlo,monospace;
   --radius:12px; --radius-lg:20px;
   --amber:#f5a623; --amber-dim:rgba(245,166,35,0.10);
+  --teal:#00bfa5; --teal-dim:rgba(0,191,165,0.10);
   --green:#2ecc71; --red:#e55353; --blue:#4a9eff;
 }
 [data-theme="dark"] {
@@ -92,6 +93,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .status-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:48px;animation:fadeUp .4s ease .08s both;}
 .status-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 32px;position:relative;overflow:hidden;transition:all .2s;box-shadow:0 2px 12px var(--shadow);}
 .status-card:hover{border-color:rgba(245,166,35,.3);transform:translateY(-2px);box-shadow:0 8px 32px var(--shadow);}
+.status-card.teal-card:hover{border-color:rgba(0,191,165,.3);}
 .status-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--amber),transparent);}
 .status-card.teal-card::before{background:linear-gradient(90deg,#00bfa5,transparent);}
 .status-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
@@ -108,6 +110,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .card-btn.primary:hover{opacity:.85;transform:translateY(-1px);}
 .card-btn.secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
 .card-btn.secondary:hover{border-color:var(--amber);color:var(--amber);transform:translateY(-1px);}
+.teal-card .card-btn.secondary:hover{border-color:var(--teal);color:var(--teal);}
 
 /* HISTORY */
 .section-label{font-size:11px;letter-spacing:3px;color:var(--text-muted);text-transform:uppercase;margin-bottom:16px;animation:fadeUp .4s ease .15s both;}

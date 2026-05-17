@@ -387,6 +387,15 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   #sticky-progress{padding:8px 20px;}
   .curr-grid{grid-template-columns:1fr;}
 }
+@keyframes shimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
+.sk{border-radius:6px;background:linear-gradient(90deg,var(--surface2) 25%,var(--border) 50%,var(--surface2) 75%);background-size:600px 100%;animation:shimmer 1.4s infinite linear;}
+.sk-line{display:block;}
+.sk-pic-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px 26px;box-shadow:0 2px 8px var(--shadow);}
+/* Trans expand badge */
+.trans-badge{display:inline-flex;align-items:center;margin-left:7px;font-size:10px;font-weight:600;letter-spacing:.5px;color:var(--teal);background:var(--teal-dim);border:1px solid var(--teal-border);border-radius:4px;padding:2px 7px;cursor:pointer;transition:all .15s;vertical-align:middle;}
+.trans-badge:hover{background:rgba(0,191,165,.2);}
+.ltrans-sub td{background:rgba(0,191,165,.03);border-bottom:1px solid rgba(42,42,61,.3) !important;}
+[data-theme="light"] .ltrans-sub td{background:rgba(0,191,165,.04);}
 </style>
 </head>
 <body>
@@ -498,6 +507,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <div class="hm-lbl">Timestamp</div>
       <div class="hm-val" id="h-ts">&mdash;</div>
       <button class="regen-btn" onclick="confirmRegen()">&#8634; Regenerate</button>
+      <button class="regen-btn" id="export-btn" onclick="exportActionableExcel()" style="margin-top:6px;border-color:var(--teal);color:var(--teal)">&#8595; Export Excel</button>
     </div>
   </div>
   <div class="done-banner" id="done-banner">
@@ -507,7 +517,16 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <div class="done-sub">Every Contest, Pending and Pre-Arbitration case this month has been actioned.</div>
     </div>
   </div>
-  <div class="stats-row">
+  <!-- Stats skeleton -->
+  <div id="l-stats-sk" class="stats-row" style="pointer-events:none">
+    <div class="sc"><div class="sk sk-line" style="height:10px;width:50%;margin-bottom:10px;border-radius:4px"></div><div class="sk sk-line" style="height:28px;width:60%;margin-bottom:6px;border-radius:4px"></div><div class="sk sk-line" style="height:9px;width:40%;border-radius:4px"></div></div>
+    <div class="sc"><div class="sk sk-line" style="height:10px;width:50%;margin-bottom:10px;border-radius:4px"></div><div class="sk sk-line" style="height:28px;width:60%;margin-bottom:6px;border-radius:4px"></div><div class="sk sk-line" style="height:9px;width:40%;border-radius:4px"></div></div>
+    <div class="sc"><div class="sk sk-line" style="height:10px;width:50%;margin-bottom:10px;border-radius:4px"></div><div class="sk sk-line" style="height:28px;width:60%;margin-bottom:6px;border-radius:4px"></div><div class="sk sk-line" style="height:9px;width:40%;border-radius:4px"></div></div>
+    <div class="sc"><div class="sk sk-line" style="height:10px;width:50%;margin-bottom:10px;border-radius:4px"></div><div class="sk sk-line" style="height:28px;width:60%;margin-bottom:6px;border-radius:4px"></div><div class="sk sk-line" style="height:9px;width:40%;border-radius:4px"></div></div>
+    <div class="sc"><div class="sk sk-line" style="height:10px;width:50%;margin-bottom:10px;border-radius:4px"></div><div class="sk sk-line" style="height:28px;width:60%;margin-bottom:6px;border-radius:4px"></div><div class="sk sk-line" style="height:9px;width:40%;border-radius:4px"></div></div>
+    <div class="sc"><div class="sk sk-line" style="height:10px;width:50%;margin-bottom:10px;border-radius:4px"></div><div class="sk sk-line" style="height:28px;width:60%;margin-bottom:6px;border-radius:4px"></div><div class="sk sk-line" style="height:9px;width:40%;border-radius:4px"></div></div>
+  </div>
+  <div class="stats-row" id="l-stats-row" style="display:none">
     <div class="sc c-teal"><div class="sc-lbl">Total Rows</div><div class="sc-val" id="s-total">0</div><div class="sc-sub">This month</div></div>
     <div class="sc c-purple"><div class="sc-lbl">Contest</div><div class="sc-val" id="s-ct">0</div><div class="sc-sub">Actionable</div></div>
     <div class="sc c-orange"><div class="sc-lbl">Pending</div><div class="sc-val" id="s-pd">0</div><div class="sc-sub">Actionable</div></div>
@@ -523,7 +542,13 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <div class="gsearch-drop" id="gsearch-drop"></div>
   </div>
   <div class="sec-label">PIC Overview &mdash; Click to view &amp; action cases</div>
-  <div class="pic-grid" id="pic-grid"></div>
+  <!-- PIC grid skeleton -->
+  <div class="pic-grid" id="l-picgrid-sk">
+    <div class="sk-pic-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:16px"><div class="sk" style="width:40px;height:40px;border-radius:10px;flex-shrink:0"></div><div style="flex:1"><div class="sk sk-line" style="height:14px;width:50%;margin-bottom:6px;border-radius:4px"></div><div class="sk sk-line" style="height:10px;width:70%;border-radius:4px"></div></div></div><div class="sk sk-line" style="height:4px;border-radius:2px;margin:0 0 6px"></div><div class="sk sk-line" style="height:8px;width:30%;border-radius:4px;margin-bottom:14px"></div><div style="display:flex;gap:8px"><div class="sk sk-line" style="width:80px;height:22px;border-radius:6px"></div><div class="sk sk-line" style="width:80px;height:22px;border-radius:6px"></div></div></div>
+    <div class="sk-pic-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:16px"><div class="sk" style="width:40px;height:40px;border-radius:10px;flex-shrink:0"></div><div style="flex:1"><div class="sk sk-line" style="height:14px;width:50%;margin-bottom:6px;border-radius:4px"></div><div class="sk sk-line" style="height:10px;width:70%;border-radius:4px"></div></div></div><div class="sk sk-line" style="height:4px;border-radius:2px;margin:0 0 6px"></div><div class="sk sk-line" style="height:8px;width:30%;border-radius:4px;margin-bottom:14px"></div><div style="display:flex;gap:8px"><div class="sk sk-line" style="width:80px;height:22px;border-radius:6px"></div><div class="sk sk-line" style="width:80px;height:22px;border-radius:6px"></div></div></div>
+    <div class="sk-pic-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:16px"><div class="sk" style="width:40px;height:40px;border-radius:10px;flex-shrink:0"></div><div style="flex:1"><div class="sk sk-line" style="height:14px;width:50%;margin-bottom:6px;border-radius:4px"></div><div class="sk sk-line" style="height:10px;width:70%;border-radius:4px"></div></div></div><div class="sk sk-line" style="height:4px;border-radius:2px;margin:0 0 6px"></div><div class="sk sk-line" style="height:8px;width:30%;border-radius:4px;margin-bottom:14px"></div><div style="display:flex;gap:8px"><div class="sk sk-line" style="width:80px;height:22px;border-radius:6px"></div></div></div>
+  </div>
+  <div class="pic-grid" id="pic-grid" style="display:none"></div>
   <div id="hero-past-panel" style="display:none;margin-top:40px">
     <div class="sec-label" style="margin-top:0">Other Listings</div>
     <div id="hero-past-list"></div>
@@ -995,27 +1020,38 @@ function doGenerate(){
   showLoad('Building listing...','Parsing cases...');
   var rows=window._parsedRows;
   dbKey=window._detectedKey||nowKey();
-  var cases={};
+  // Group rows by Ticket ID — one entry per ticket, trans[] holds each Tran ID
+  var casesMap={};
   rows.forEach(function(r){
+    var ticketId=String(r['Ticket ID']||'').trim()||('UNK_'+Math.random().toString(36).slice(2));
     var tId=String(r['Tran ID']||'').trim();
-    if(!tId)tId=String(r['Ticket ID']||'').trim()+'_'+Math.floor(Math.random()*999999);
-    var key=tId.replace(/[.#$[\]/]/g,'_');
     var st=normSt(r['Status']);
-    cases[key]={
-      ticket_id:String(r['Ticket ID']||'').trim(),
-      date_received:String(r['Date Received']||'').trim(),
-      due_date:String(r['Due Date']||'').trim(),
-      merchant:String(r['Merchant ID']||'').trim(),
-      channel:String(r['Channel']||'').trim(),
-      card_type:String(r['Card Type']||'').trim(),
-      tran_id:tId,
-      status:st,
-      dispute_amt:cleanAmt(r['Dispute Amt']),
-      dispute_amt_num:parseAmt(r['Dispute Amt']),
-      dispute_currency:parseCurr(r['Dispute Amt']),
-      pic:String(r['PIC']||'').trim(),
-      remarks:String(r['Remarks']||'').trim()
-    };
+    if(!casesMap[ticketId]){
+      casesMap[ticketId]={
+        ticket_id:ticketId,
+        date_received:String(r['Date Received']||'').trim(),
+        due_date:String(r['Due Date']||'').trim(),
+        merchant:String(r['Merchant ID']||'').trim(),
+        channel:String(r['Channel']||'').trim(),
+        card_type:String(r['Card Type']||'').trim(),
+        status:st,
+        dispute_amt:cleanAmt(r['Dispute Amt']),
+        dispute_amt_num:parseAmt(r['Dispute Amt']),
+        dispute_currency:parseCurr(r['Dispute Amt']),
+        pic:String(r['PIC']||'').trim(),
+        remarks:String(r['Remarks']||'').trim(),
+        trans:[]
+      };
+    }
+    if(tId){casesMap[ticketId].trans.push({tran_id:tId});}
+  });
+  // Use tran_id of first trans as the tran_id reference for ticking; fallback to ticket_id
+  var cases={};
+  Object.values(casesMap).forEach(function(c){
+    // tran_id used as tick key = first tran_id or ticket_id
+    c.tran_id=c.trans.length?c.trans[0].tran_id:c.ticket_id;
+    var key=c.ticket_id.replace(/[.#$[\]/]/g,'_');
+    cases[key]=c;
   });
   var ml=dbKey.replace('_',' ');
   var rec={generated_by:pic,generated_at:Date.now(),key:dbKey,month_label:ml,cases:cases,tick_states:{}};
@@ -1090,6 +1126,15 @@ function showHero(){
   document.getElementById('s-pd').textContent=pd;
   document.getElementById('s-pa').textContent=pa;
   document.getElementById('s-act').textContent=ct+pd+pa;
+  // Hide skeletons, show real content
+  var statsSk=document.getElementById('l-stats-sk');
+  var statsRow=document.getElementById('l-stats-row');
+  var picGridSk=document.getElementById('l-picgrid-sk');
+  var picGrid=document.getElementById('pic-grid');
+  if(statsSk)statsSk.style.display='none';
+  if(statsRow)statsRow.style.display='';
+  if(picGridSk)picGridSk.style.display='none';
+  if(picGrid)picGrid.style.display='';
   updateProgress();
   renderPICGrid();
   buildChannelFilter();
@@ -1276,15 +1321,37 @@ function renderTable(cases){
         +'<polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'
         +'#'+c.ticket_id+'</a>'
       :'<span class="tkt-plain">#'+c.ticket_id+'<span class="anomaly-tag">anomaly</span></span>';
-    return '<tr><td class="tick-cell"><div class="tick-box'+(tk?' on':'')+'" onclick="toggleTick(\''+c.tran_id+'\')"></div></td>'
-      +'<td>'+tktHtml+'</td>'
+    var trans=Array.isArray(c.trans)?c.trans:[];
+    var hasTrans=trans.length>0;
+    var safeId='lr_'+c.ticket_id.replace(/[^a-zA-Z0-9]/g,'_');
+    var transBadge=hasTrans
+      ?'<span class="trans-badge" onclick="event.stopPropagation();lToggleTrans(this.dataset.id)" data-id="'+safeId+'" id="lbadge_'+safeId+'">'+trans.length+' trans &#9662;</span>'
+      :'';
+    var transRows=hasTrans?trans.map(function(t){
+      return '<tr class="ltrans-sub" id="lsub_'+safeId+'" style="display:none">'
+        +'<td></td><td colspan="3" style="padding-left:28px;font-size:11px;color:var(--text-muted);font-family:var(--font-mono)">'+(t.tran_id||'—')+'</td>'
+        +'<td colspan="4"></td></tr>';
+    }).join(''):'';
+    return '<tr>'
+      +'<td class="tick-cell"><div class="tick-box'+(tk?' on':'')+'" onclick="toggleTick(this.dataset.tid)" data-tid="'+c.tran_id+'""></div></td>'
+      +'<td>'+tktHtml+transBadge+'</td>'
       +'<td class="merch">'+(c.merchant||'—')+'</td>'
-      +'<td class="tran-id">'+c.tran_id+'</td>'
+      +'<td class="tran-id" style="color:var(--text-muted);font-size:11px">'+(hasTrans?trans.length+' tran'+(trans.length>1?'s':''):'—')+'</td>'
       +'<td style="font-size:11px;color:var(--text-dim)">'+(c.channel||'—')+'</td>'
       +'<td><span class="spill '+sc+'">'+c.status+'</span></td>'
       +'<td style="font-size:12px;font-weight:600;white-space:nowrap">'+(c.dispute_amt||'—')+'</td>'
-      +'<td style="font-size:11px;color:var(--text-dim);white-space:nowrap">'+(c.due_date||'—')+'</td></tr>';
+      +'<td style="font-size:11px;color:var(--text-dim);white-space:nowrap">'+(c.due_date||'—')+'</td>'
+      +'</tr>'+transRows;
   }).join('');
+}
+
+function lToggleTrans(safeId){
+  var rows=document.querySelectorAll('#lsub_'+safeId);
+  var badge=document.getElementById('lbadge_'+safeId);
+  if(!rows.length)return;
+  var isHidden=rows[0].style.display==='none';
+  rows.forEach(function(r){r.style.display=isHidden?'':'none';});
+  if(badge)badge.innerHTML=badge.innerHTML.replace(isHidden?'▾':'▴',isHidden?'▴':'▾');
 }
 
 /* ═══════════════════════════════════════
@@ -1563,6 +1630,104 @@ function copySummary(){
     btn.textContent='\u2713 Copied!';btn.classList.add('copied');
     setTimeout(function(){btn.textContent='Copy Summary';btn.classList.remove('copied');},2000);
   });
+}
+
+/* ═══════════════════════════════════════
+   EXPORT TO EXCEL
+═══════════════════════════════════════ */
+function exportActionableExcel(){
+  if(!D){toast('No listing loaded');return;}
+  var btn=document.getElementById('export-btn');
+  if(btn){btn.textContent='Building...';btn.disabled=true;}
+
+  try{
+    var XLSX_lib=window.XLSX||XLSX;
+    if(!XLSX_lib){toast('XLSX library not loaded');if(btn){btn.textContent='↓ Export Excel';btn.disabled=false;}return;}
+
+    var cases=Object.values(D.cases||{});
+    var actionable=cases.filter(function(c){return isAct(c.status);});
+
+    if(!actionable.length){toast('No actionable cases to export');if(btn){btn.textContent='↓ Export Excel';btn.disabled=false;}return;}
+
+    // Group by PIC
+    var picMap={};
+    actionable.forEach(function(c){
+      var p=c.pic||'Unassigned';
+      if(!picMap[p])picMap[p]=[];
+      picMap[p].push(c);
+    });
+
+    var wb=XLSX_lib.utils.book_new();
+
+    // ── SUMMARY SHEET (first) ──
+    var summaryRows=[
+      ['CB Actionable Listing — '+(D.month_label||dbKey.replace('_',' '))],
+      ['Exported: '+new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'})],
+      ['Generated by: '+D.generated_by],
+      [],
+      ['PIC','Total Actionable','Contest','Pending','Pre-Arbitration','Total Dispute Amt']
+    ];
+    var picNames=Object.keys(picMap).sort();
+    var grandTotal=0,grandCt=0,grandPd=0,grandPa=0,grandAmt=0;
+    picNames.forEach(function(p){
+      var cs=picMap[p];
+      var ct=cs.filter(function(c){return c.status==='Contest';}).length;
+      var pd=cs.filter(function(c){return c.status==='Pending';}).length;
+      var pa=cs.filter(function(c){return c.status==='Pre-Arbitration';}).length;
+      var amt=cs.reduce(function(s,c){return s+(c.dispute_amt_num||0);},0);
+      var curr=cs[0]?cs[0].dispute_currency||'':'';
+      summaryRows.push([pName(p),cs.length,ct,pd,pa,(curr?curr+' ':'')+amt.toFixed(2)]);
+      grandTotal+=cs.length;grandCt+=ct;grandPd+=pd;grandPa+=pa;grandAmt+=amt;
+    });
+    summaryRows.push([]);
+    summaryRows.push(['TOTAL',grandTotal,grandCt,grandPd,grandPa,grandAmt.toFixed(2)]);
+    var summaryWS=XLSX_lib.utils.aoa_to_sheet(summaryRows);
+    // Set column widths
+    summaryWS['!cols']=[{wch:24},{wch:18},{wch:10},{wch:10},{wch:18},{wch:20}];
+    XLSX_lib.utils.book_append_sheet(wb,summaryWS,'Summary');
+
+    // ── PIC SHEETS ──
+    var headers=['Ticket ID','Date Received','Due Date','Merchant ID','Channel','Card Type','Tran ID','Status','Dispute Amt'];
+    picNames.forEach(function(p){
+      var cs=picMap[p];
+      var rows=[headers];
+      cs.forEach(function(c){
+        // Flat rows — one row per Tran ID (as per spec)
+        var trans=Array.isArray(c.trans)&&c.trans.length?c.trans:[{tran_id:c.tran_id||''}];
+        trans.forEach(function(t,idx){
+          rows.push([
+            idx===0?c.ticket_id:'',          // Ticket ID only on first row of group
+            idx===0?c.date_received:'',
+            idx===0?c.due_date:'',
+            idx===0?c.merchant:'',
+            idx===0?c.channel:'',
+            idx===0?c.card_type:'',
+            t.tran_id||'',
+            idx===0?c.status:'',
+            idx===0?c.dispute_amt:''
+          ]);
+        });
+      });
+      var ws=XLSX_lib.utils.aoa_to_sheet(rows);
+      ws['!cols']=[{wch:14},{wch:16},{wch:14},{wch:22},{wch:14},{wch:14},{wch:22},{wch:18},{wch:18}];
+      // Sheet name: display name, max 31 chars (Excel limit), sanitise forbidden chars
+      var sheetName=pName(p).replace(/[:\\/?*[\]]/g,'').slice(0,31);
+      XLSX_lib.utils.book_append_sheet(wb,ws,sheetName);
+    });
+
+    // ── FILE NAME ──
+    var monthLabel=D.month_label||dbKey.replace('_',' ');
+    var today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+    var fileName='Actionable Listing '+monthLabel+' - '+today+'.xlsx';
+
+    XLSX_lib.writeFile(wb,fileName);
+    toast('Excel exported!');
+  }catch(e){
+    toast('Export error: '+e.message);
+    console.error(e);
+  }finally{
+    if(btn){btn.textContent='↓ Export Excel';btn.disabled=false;}
+  }
 }
 </script>
 </body>
