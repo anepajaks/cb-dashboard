@@ -573,7 +573,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     </div>
   </div>
   <div class="pd-stats">
-    <div class="pds"><div class="pds-lbl">Total Rows</div><div class="pds-val c-teal" id="pd-total">0</div></div>
+    <div class="pds"><div class="pds-lbl">Total Tickets</div><div class="pds-val c-teal" id="pd-total">0</div></div>
     <div class="pds"><div class="pds-lbl">Contest</div><div class="pds-val c-purple" id="pd-ct">0</div></div>
     <div class="pds"><div class="pds-lbl">Pending</div><div class="pds-val c-orange" id="pd-pd">0</div></div>
     <div class="pds"><div class="pds-lbl">Pre-Arbi</div><div class="pds-val c-blue" id="pd-pa">0</div></div>
@@ -670,7 +670,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         <table class="wl-tbl">
           <thead><tr>
             <th onclick="wlSort('name')">PIC <span class="sa">&#8645;</span></th>
-            <th onclick="wlSort('total')">Total Rows <span class="sa">&#8645;</span></th>
+            <th onclick="wlSort('total')">Total Tickets <span class="sa">&#8645;</span></th>
             <th onclick="wlSort('actionable')">Actionable <span class="sa">&#8645;</span></th>
             <th>Breakdown</th>
             <th onclick="wlSort('ticked')">Ticked <span class="sa">&#8645;</span></th>
@@ -1216,7 +1216,7 @@ function renderPICGrid(){
          +'<div class="prog-wrap"><div class="prog-bar '+(pct===100?'done':'')+'" style="width:'+pct+'%"></div></div>'
          +'<div class="prog-lbl"><span>'+tk+'/'+d.act.length+' ticked</span><span>'+pct+'%</span></div>'
       )
-      +'<div class="pic-card-ftr"><div class="pic-rows"><strong>'+d.all.length+'</strong> row'+(d.all.length!==1?'s':'')+'</div>'
+      +'<div class="pic-card-ftr"><div class="pic-rows"><strong>'+d.all.length+'</strong> ticket'+(d.all.length!==1?'s':'')+'</div>'
       +'<div class="pic-arr">\u203A</div></div></div>';
   }).join('');
 }
