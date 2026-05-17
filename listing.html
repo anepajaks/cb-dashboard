@@ -529,7 +529,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   </div>
   <div class="stats-row" id="l-stats-row" style="display:none">
     <div class="sc c-teal"><div class="sc-lbl">Total Tickets</div><div class="sc-val" id="s-total">0</div><div class="sc-sub">Unique ticket IDs</div></div>
-    <div class="sc" style="border-color:rgba(0,191,165,.15)"><div class="sc-lbl">Total Transactions</div><div class="sc-val" id="s-ttx" style="color:var(--teal);opacity:.75">0</div><div class="sc-sub">Raw Excel rows</div></div>
+    <div class="sc" style="border-color:rgba(0,191,165,.15)"><div class="sc-lbl">Total Transactions</div><div class="sc-val" id="s-ttx" style="color:var(--teal);opacity:.75">0</div><div class="sc-sub">of this month</div></div>
     <div class="sc c-purple"><div class="sc-lbl">Contest</div><div class="sc-val" id="s-ct">0</div><div class="sc-sub">Actionable</div></div>
     <div class="sc c-orange"><div class="sc-lbl">Pending</div><div class="sc-val" id="s-pd">0</div><div class="sc-sub">Actionable</div></div>
     <div class="sc c-blue"><div class="sc-lbl">Pre-Arbi</div><div class="sc-val" id="s-pa">0</div><div class="sc-sub">Actionable</div></div>
@@ -630,7 +630,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <div class="an-card-ttl">Status Breakdown</div>
       <div class="donut-wrap">
         <div class="donut-svg-rel">
-          <svg id="donut-svg" width="130" height="130" viewBox="0 0 130 130" onmousemove="var t=document.getElementById('donut-tip');if(t&&t.style.opacity==='1'){t.style.left=(event.clientX+14)+'px';t.style.top=(event.clientY-12)+'px';}"></svg>
+          <svg id="donut-svg" width="130" height="130" viewBox="0 0 130 130"></svg>
           <div class="donut-ctr"><div class="donut-ctr-val" id="donut-total">0</div><div class="donut-ctr-lbl">Total</div></div>
         </div>
         <div class="donut-leg" id="donut-leg"></div>
@@ -1452,69 +1452,129 @@ function renderAnalytics(){
   renderWorkload(cases);
 }
 
+// Donut segment registry — populated by renderDonut, used by SVG mousemove
+var _donutSegs=[];
+
 function renderDonut(cases){
   var cnt={};cases.forEach(function(c){cnt[c.status]=(cnt[c.status]||0)+1;});
   var total=cases.length;
   document.getElementById('donut-total').textContent=total;
   var entries=Object.entries(cnt).sort(function(a,b){return b[1]-a[1];});
-  // Fallback palette for unknown statuses — cycle through distinct colours
   var FALLBACK_COLS=['#e67e22','#1abc9c','#e91e63','#3498db','#ff5722','#8bc34a','#9c27b0','#00bcd4'];
   var fbIdx=0;
   function getCol(st){return ST_COL[st]||(ST_COL[st]=FALLBACK_COLS[fbIdx++%FALLBACK_COLS.length]);}
   var cx=65,cy=65,r=50,sw=13,circ=2*Math.PI*r,off=0,paths='';
+  _donutSegs=[];
+
   // Build tooltip element if not exists
   var tip=document.getElementById('donut-tip');
   if(!tip){
     tip=document.createElement('div');
     tip.id='donut-tip';
-    tip.style.cssText='position:fixed;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;pointer-events:none;opacity:0;transition:opacity .15s;z-index:999;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.3);';
+    tip.style.cssText='position:fixed;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 13px;font-size:12px;font-weight:600;pointer-events:none;opacity:0;transition:opacity .12s;z-index:9999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.35);';
     document.body.appendChild(tip);
   }
+
   entries.forEach(function(e){
-    var st=e[0],n=e[1],pct=n/total,dash=pct*circ-1.2,col=getCol(st);
-    var pctStr=Math.round(pct*100)+'%';
-    paths+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="'+sw+'"'
-      +' stroke-dasharray="'+dash+' '+(circ-dash)+'"'
-      +' stroke-dashoffset="'+(-(off*circ-circ/4))+'"'
-      +' data-label="'+st+'" data-count="'+n+'" data-pct="'+pctStr+'" data-col="'+col+'"'
-      +' style="cursor:pointer;transition:stroke-width .15s;"'
-      +' onmouseenter="donutOver(event,this)" onmouseleave="donutOut(this)" onclick="donutOver(event,this)"/>';
+    var st=e[0],n=e[1],pct=n/total,dash=pct*circ,col=getCol(st);
+    // Store segment start/end angles for hit detection (radians, 0 = top)
+    var startAngle=off*2*Math.PI - Math.PI/2;
+    var endAngle=(off+pct)*2*Math.PI - Math.PI/2;
+    _donutSegs.push({st:st,n:n,pct:Math.round(pct*100),col:col,startAngle:startAngle,endAngle:endAngle});
+    // Render: gap of 1.5px between segments
+    var drawDash=Math.max(0,dash-1.5);
+    paths+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+col+'"'
+      +' stroke-width="'+sw+'"'
+      +' stroke-dasharray="'+drawDash+' '+(circ-drawDash)+'"'
+      +' stroke-dashoffset="'+(-( off*circ - circ/4 ))+'"/>';
     off+=pct;
   });
-  document.getElementById('donut-svg').innerHTML=paths;
+
+  var svg=document.getElementById('donut-svg');
+  svg.innerHTML=paths;
+
+  // Add invisible hit ring over the donut for reliable hover detection
+  var hitRing='<circle id="donut-hit" cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="transparent" stroke-width="'+(sw+10)+'" style="cursor:pointer"/>';
+  svg.innerHTML+=hitRing;
+
+  // Attach events to the hit ring
+  var hit=svg.querySelector('#donut-hit');
+  if(hit){
+    hit.addEventListener('mousemove',function(ev){
+      var rect=svg.getBoundingClientRect();
+      var mx=ev.clientX-rect.left,my=ev.clientY-rect.top;
+      // Scale to viewBox coords
+      var scaleX=130/rect.width,scaleY=130/rect.height;
+      var vx=mx*scaleX,vy=my*scaleY;
+      var dx=vx-cx,dy=vy-cy;
+      var dist=Math.sqrt(dx*dx+dy*dy);
+      // Only trigger if cursor is on the ring (r ± sw/2)
+      if(dist<r-sw/2-2||dist>r+sw/2+2){donutHide();return;}
+      var angle=Math.atan2(dy,dx);
+      // Find which segment this angle belongs to
+      var seg=null;
+      for(var i=0;i<_donutSegs.length;i++){
+        var s=_donutSegs[i];
+        // Normalise angle to same space as segment angles
+        var a=angle;
+        var sa=s.startAngle,ea=s.endAngle;
+        // Handle wrap-around
+        if(ea>Math.PI){
+          if(a<0)a+=2*Math.PI;
+          if(sa<0)sa+=2*Math.PI;
+          ea=ea%(2*Math.PI);
+        }
+        if(a>=sa&&a<=ea){seg=s;break;}
+        // Second pass with offset for wrap
+        if(sa>ea){
+          if(a>=sa||a<=ea){seg=s;break;}
+        }
+      }
+      if(!seg&&_donutSegs.length){
+        // Fallback: closest segment by midpoint angle
+        var best=null,bestD=Infinity;
+        _donutSegs.forEach(function(s){
+          var mid=(s.startAngle+s.endAngle)/2;
+          var d=Math.abs(angle-mid);
+          if(d>Math.PI)d=2*Math.PI-d;
+          if(d<bestD){bestD=d;best=s;}
+        });
+        seg=best;
+      }
+      if(!seg)return;
+      showDonutTip(ev,seg);
+    });
+    hit.addEventListener('mouseleave',function(){donutHide();});
+  }
+
   document.getElementById('donut-leg').innerHTML=entries.map(function(e){
     var st=e[0],n=e[1],col=getCol(st),pct=Math.round(n/total*100);
-    return '<div class="leg-row"><div class="leg-left"><div class="leg-dot" style="background:'+col+'"></div>'
+    return '<div class="leg-row" style="cursor:default">'
+      +'<div class="leg-left"><div class="leg-dot" style="background:'+col+'"></div>'
       +'<div class="leg-lbl">'+st+'</div></div>'
       +'<div class="leg-right"><div class="leg-val">'+n+'</div><div class="leg-pct">'+pct+'%</div></div></div>';
   }).join('');
 }
-function donutOver(ev,el){
+
+function showDonutTip(ev,seg){
   var tip=document.getElementById('donut-tip');
   if(!tip)return;
-  var col=el.getAttribute('data-col');
-  var lbl=el.getAttribute('data-label');
-  var cnt=el.getAttribute('data-count');
-  var pct=el.getAttribute('data-pct');
-  tip.innerHTML='<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+col+';margin-right:6px;vertical-align:middle"></span>'
-    +'<span style="color:var(--text)">'+lbl+'</span>'
-    +' &nbsp;<b style="color:'+col+'">'+cnt+'</b>'
-    +' <span style="color:var(--text-dim);font-weight:400">'+pct+'</span>';
-  el.setAttribute('stroke-width','17');
+  tip.innerHTML='<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+seg.col+';margin-right:7px;vertical-align:middle;flex-shrink:0"></span>'
+    +'<span style="color:var(--text)">'+seg.st+'</span>'
+    +'&nbsp;&nbsp;<b style="color:'+seg.col+'">'+seg.n+'</b>'
+    +' <span style="color:var(--text-dim);font-weight:400;margin-left:3px">'+seg.pct+'%</span>';
   tip.style.opacity='1';
-  tip.style.left=(ev.clientX+14)+'px';
-  tip.style.top=(ev.clientY-12)+'px';
-  // Keep tooltip in viewport
+  var x=ev.clientX+16,y=ev.clientY-16;
+  tip.style.left=x+'px';tip.style.top=y+'px';
   setTimeout(function(){
-    var r=tip.getBoundingClientRect();
-    if(r.right>window.innerWidth)tip.style.left=(ev.clientX-r.width-10)+'px';
-    if(r.bottom>window.innerHeight)tip.style.top=(ev.clientY-r.height-10)+'px';
+    var b=tip.getBoundingClientRect();
+    if(b.right>window.innerWidth-8)tip.style.left=(ev.clientX-b.width-12)+'px';
+    if(b.bottom>window.innerHeight-8)tip.style.top=(ev.clientY-b.height-8)+'px';
   },0);
 }
-function donutOut(el){
+function donutHide(){
   var tip=document.getElementById('donut-tip');
   if(tip)tip.style.opacity='0';
-  el.setAttribute('stroke-width','13');
 }
 
 function renderCurrency(cases){
