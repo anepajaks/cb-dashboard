@@ -1614,25 +1614,95 @@ function renderCurrency(cases){
   }).join('');
 }
 
+// ── CHANNEL NORMALISATION ──────────────────────────────────────────
+function normChannel(raw){
+  var r=String(raw||'').toLowerCase().trim();
+  if(r.indexOf('visa')>-1)return'Visa';
+  if(r.indexOf('master')>-1)return'Mastercard';
+  if(r.indexOf('mydebit')>-1||r.indexOf('my_debit')>-1)return'MyDebit';
+  if(r.indexOf('alipay')>-1)return'Alipay+';
+  if(r.indexOf('grabpay')>-1||r.indexOf('gupop')>-1)return'GrabPay';
+  if(r.indexOf('duitnow')>-1||r.indexOf('rpp_rtp')>-1||r.indexOf('mb2u')>-1||r.indexOf('qrpay')>-1)return'DuitNowQR';
+  if(r.indexOf('shopeepay')>-1)return'ShopeePay';
+  if(r.indexOf('tng')>-1)return'TNG';
+  if(r.indexOf('wechat')>-1)return'WeChatPay';
+  if(r.indexOf('paymaya')>-1||r.indexOf('maya')>-1)return'PayMaya';
+  if(r.indexOf('unionpay')>-1||r.indexOf('union_pay')>-1)return'UnionPay';
+  return raw||'Other';
+}
+function normChannelGroup(cat){
+  return(cat==='Visa'||cat==='Mastercard'||cat==='UnionPay')?'Card':'OBW';
+}
+var CHANNEL_COLORS={
+  'Visa':'#1a1f71','Mastercard':'#eb6209','MyDebit':'#888',
+  'Alipay+':'#1677ff','GrabPay':'#00b14f','DuitNowQR':'#00bfa5',
+  'ShopeePay':'#f05d23','TNG':'#0066b3','WeChatPay':'#07c160',
+  'PayMaya':'#512888','UnionPay':'#c0392b','Other':'#4a4a6a'
+};
+// ──────────────────────────────────────────────────────────────────
+
 function renderChannelBars(){
   if(!D)return;
   var fv=document.getElementById('ch-filter').value;
   var cases=Object.values(D.cases||{});
   var src=fv==='act'?cases.filter(function(c){return isAct(c.status);}):cases;
+  var total=0;
+
+  // ── Section 1: Channel Category breakdown ──
   var cm={};
   src.forEach(function(c){
-    var ch=c.channel||'Unknown';
-    var tranCount=Array.isArray(c.trans)&&c.trans.length>0?c.trans.length:1;
-    cm[ch]=(cm[ch]||0)+tranCount;
+    var cat=normChannel(c.channel);
+    var n=Array.isArray(c.trans)&&c.trans.length>0?c.trans.length:1;
+    cm[cat]=(cm[cat]||0)+n;
+    total+=n;
   });
   var sorted=Object.entries(cm).sort(function(a,b){return b[1]-a[1];});
   var mx=sorted.length?sorted[0][1]:1;
-  document.getElementById('ch-bars').innerHTML=sorted.map(function(e){
-    var pct=Math.round(e[1]/mx*100);
-    return '<div class="bar-row"><div class="bar-lbl" title="'+e[0]+'">'+e[0]+'</div>'
-      +'<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:var(--teal)"></div></div>'
-      +'<div class="bar-val">'+e[1]+'</div></div>';
-  }).join('');
+
+  var catHTML='<div style="font-size:10px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px">By Channel Category</div>'
+    +'<div class="bar-list">'
+    +sorted.map(function(e){
+      var pct=Math.round(e[1]/mx*100);
+      var sharePct=total>0?Math.round(e[1]/total*100):0;
+      var col=CHANNEL_COLORS[e[0]]||'var(--teal)';
+      return '<div class="bar-row">'
+        +'<div class="bar-lbl" title="'+e[0]+'">'+e[0]+'</div>'
+        +'<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+col+'"></div></div>'
+        +'<div class="bar-val">'+e[1]+'</div>'
+        +'<div style="font-size:10px;color:var(--text-muted);min-width:34px;text-align:right">'+sharePct+'%</div>'
+        +'</div>';
+    }).join('')
+    +'</div>';
+
+  // ── Section 2: Card vs OBW split ──
+  var gm={Card:0,OBW:0};
+  src.forEach(function(c){
+    var grp=normChannelGroup(normChannel(c.channel));
+    var n=Array.isArray(c.trans)&&c.trans.length>0?c.trans.length:1;
+    gm[grp]=(gm[grp]||0)+n;
+  });
+  var gTotal=(gm.Card||0)+(gm.OBW||0)||1;
+  var cardPct=Math.round((gm.Card||0)/gTotal*100);
+  var obwPct=Math.round((gm.OBW||0)/gTotal*100);
+
+  var groupHTML='<div style="font-size:10px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;margin:22px 0 10px">By Channel Group</div>'
+    +'<div class="bar-list">'
+    +'<div class="bar-row">'
+      +'<div class="bar-lbl">Card</div>'
+      +'<div class="bar-track"><div class="bar-fill" style="width:'+cardPct+'%;background:#1a1f71"></div></div>'
+      +'<div class="bar-val">'+(gm.Card||0)+'</div>'
+      +'<div style="font-size:10px;color:var(--text-muted);min-width:34px;text-align:right">'+cardPct+'%</div>'
+    +'</div>'
+    +'<div class="bar-row">'
+      +'<div class="bar-lbl">OBW</div>'
+      +'<div class="bar-track"><div class="bar-fill" style="width:'+obwPct+'%;background:var(--teal)"></div></div>'
+      +'<div class="bar-val">'+(gm.OBW||0)+'</div>'
+      +'<div style="font-size:10px;color:var(--text-muted);min-width:34px;text-align:right">'+obwPct+'%</div>'
+    +'</div>'
+    +'</div>'
+    +'<div style="font-size:10px;color:var(--text-muted);margin-top:10px">Card = Visa + Mastercard + UnionPay &nbsp;·&nbsp; OBW = Online Banking & Wallets</div>';
+
+  document.getElementById('ch-bars').innerHTML=catHTML+groupHTML;
 }
 
 function renderMerchBars2(cases){
@@ -1659,7 +1729,7 @@ function renderHeatmap(cases){
   var chMap={};
   cases.forEach(function(c){
     if(!isAct(c.status))return;
-    var ch=c.channel||'Unknown';
+    var ch=normChannel(c.channel);
     if(!chMap[ch])chMap[ch]={};
     chMap[ch][c.status]=(chMap[ch][c.status]||0)+1;
   });
