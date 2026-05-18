@@ -80,6 +80,9 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .theme-btn:hover{border-color:var(--teal);}
 .nav-logout{background:none;border:1px solid var(--border);color:var(--text-dim);font-family:var(--font);font-size:11px;padding:6px 14px;border-radius:6px;cursor:pointer;transition:all .2s;letter-spacing:1px;}
 .nav-logout:hover{border-color:var(--red);color:var(--red);}
+/* SETTINGS ICON BTN */
+.nav-settings-btn{width:34px;height:34px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all .2s;text-decoration:none;color:var(--text-dim);}
+.nav-settings-btn:hover{border-color:var(--teal);color:var(--text);}
 .an-nav-btn{display:none;}
 .an-nav-btn.show{display:inline-flex;}
 
@@ -423,11 +426,12 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <a class="nav-link" href="reminder.html">Reminder</a>
     <a class="nav-link active" href="listing.html">Listing</a>
     <button class="nav-link an-nav-btn" id="an-nav-btn" onclick="goAnalytics('hero')">&#128202; Analytics</button>
-    <a class="nav-link" href="settings.html">Settings</a>
+    <a class="nav-link" href="quarterly.html">Quarterly</a>
   </div>
   <div class="nav-right">
     <span class="nav-date" id="nav-date"></span>
     <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">&#127769;</button>
+    <a class="nav-settings-btn" href="settings.html" title="Settings">⚙️</a>
     <button class="nav-logout" onclick="doLogout()">Logout</button>
   </div>
 </nav>

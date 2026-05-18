@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quarterly — CB Dashboard</title>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyBXNBdcPJQljFSczr_xe3utJfIawsew9ZA",
+    authDomain: "cb-dashboard-f5363.firebaseapp.com",
+    databaseURL: "https://cb-dashboard-f5363-default-rtdb.firebaseio.com",
+    projectId: "cb-dashboard-f5363",
+    storageBucket: "cb-dashboard-f5363.firebasestorage.app",
+    messagingSenderId: "374367815458",
+    appId: "1:374367815458:web:e3d2f4451331a171a5c77b"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const auth = getAuth(app);
+  window._db=db; window._ref=ref; window._get=get; window._set=set;
+  window._authReady=signInAnonymously(auth).then(function(){
+    window.firebaseReady=true; window.dispatchEvent(new Event('firebaseReady'));
+  }).catch(function(e){ console.error('Auth error:',e);
+    window.firebaseReady=true; window.dispatchEvent(new Event('firebaseReady'));
+  });
+</script>
+<style>
+:root{
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",sans-serif;
+  --font-mono:"SF Mono",ui-monospace,Menlo,monospace;
+  --radius:12px; --radius-lg:20px;
+  --purple:#9b59b6; --purple-dim:rgba(155,89,182,0.10); --purple-border:rgba(155,89,182,0.28);
+  --green:#2ecc71; --red:#e55353; --blue:#4a9eff;
+}
+[data-theme="dark"]{
+  --bg:#0a0a0f; --surface:#13131a; --surface2:#1c1c27; --border:#2a2a3d;
+  --text:#e8e8f0; --text-dim:#7a7a9a; --text-muted:#4a4a6a;
+  --nav-bg:rgba(10,10,15,0.92); --grid:rgba(155,89,182,0.018); --shadow:rgba(0,0,0,0.4);
+}
+[data-theme="light"]{
+  --bg:#f5f5f7; --surface:#ffffff; --surface2:#ebebf0; --border:#d8d8e8;
+  --text:#1a1a2e; --text-dim:#6e6e8a; --text-muted:#a0a0b8;
+  --nav-bg:rgba(245,245,247,0.92); --grid:rgba(0,0,0,0.035); --shadow:rgba(0,0,0,0.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;transition:background .3s,color .3s;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0;}
+
+/* ── PASSCODE ── */
+#passcode-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:200;transition:background .3s;}
+.pc-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:48px;width:100%;max-width:400px;text-align:center;animation:fadeUp .4s ease forwards;box-shadow:0 8px 40px var(--shadow);}
+.pc-logo{font-size:11px;letter-spacing:4px;color:var(--purple);text-transform:uppercase;margin-bottom:8px;}
+.pc-title{font-size:26px;font-weight:700;margin-bottom:6px;}
+.pc-sub{font-size:12px;color:var(--text-dim);margin-bottom:32px;line-height:1.6;}
+.pc-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:13px 16px;color:var(--text);font-family:var(--font);font-size:15px;letter-spacing:4px;text-align:center;outline:none;transition:border-color .2s;margin-bottom:14px;}
+.pc-input:focus{border-color:var(--purple);box-shadow:0 0 0 3px var(--purple-dim);}
+.pc-input.err{border-color:var(--red);animation:shake .3s ease;}
+.pc-btn{width:100%;background:var(--purple);color:#fff;border:none;border-radius:var(--radius);padding:13px;font-family:var(--font);font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:opacity .2s;}
+.pc-btn:hover{opacity:.85;}
+.pc-err{font-size:12px;color:var(--red);margin-top:10px;min-height:16px;}
+
+/* ── NAV ── */
+.nav{display:none;align-items:center;justify-content:space-between;padding:0 40px;height:60px;border-bottom:1px solid var(--border);background:var(--nav-bg);backdrop-filter:blur(20px);position:sticky;top:0;z-index:10;transition:background .3s,border-color .3s;}
+.nav.show{display:flex;}
+.nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.nav-dot{width:7px;height:7px;background:var(--purple);border-radius:50%;box-shadow:0 0 8px var(--purple);animation:pulse 2s infinite;}
+.nav-name{font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text);}
+.nav-name span{color:var(--purple);}
+.nav-links{display:flex;align-items:center;gap:4px;}
+.nav-link{padding:7px 16px;border-radius:8px;font-size:12px;font-weight:500;letter-spacing:.5px;text-decoration:none;color:var(--text-dim);transition:all .2s;border:1px solid transparent;}
+.nav-link:hover{color:var(--text);background:var(--surface2);}
+.nav-link.active{color:var(--purple);border-color:var(--purple-border);background:var(--purple-dim);}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.nav-date{font-size:11px;color:var(--text-dim);letter-spacing:1px;}
+.theme-btn{width:34px;height:34px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;transition:all .2s;}
+.theme-btn:hover{border-color:var(--purple);}
+.nav-settings-btn{width:34px;height:34px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all .2s;text-decoration:none;color:var(--text-dim);}
+.nav-settings-btn:hover{border-color:var(--purple);color:var(--text);}
+.nav-logout{background:none;border:1px solid var(--border);color:var(--text-dim);font-family:var(--font);font-size:11px;padding:6px 14px;border-radius:6px;cursor:pointer;transition:all .2s;letter-spacing:1px;}
+.nav-logout:hover{border-color:var(--red);color:var(--red);}
+
+/* ── APP ── */
+#app{display:none;position:relative;z-index:1;min-height:calc(100vh - 60px);}
+
+/* ── COMING SOON ── */
+.cs-wrap{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 60px);padding:40px 24px;}
+.cs-inner{text-align:center;max-width:520px;animation:fadeUp .5s ease forwards;}
+.cs-badge{display:inline-flex;align-items:center;gap:8px;background:var(--purple-dim);border:1px solid var(--purple-border);border-radius:20px;padding:6px 16px;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--purple);margin-bottom:28px;}
+.cs-badge-dot{width:6px;height:6px;background:var(--purple);border-radius:50%;animation:pulse 2s infinite;}
+.cs-icon{font-size:64px;margin-bottom:24px;display:block;line-height:1;}
+.cs-title{font-size:clamp(32px,5vw,52px);font-weight:800;line-height:1.1;margin-bottom:14px;letter-spacing:-1px;}
+.cs-title span{color:var(--purple);}
+.cs-sub{font-size:14px;color:var(--text-dim);line-height:1.7;margin-bottom:36px;max-width:380px;margin-left:auto;margin-right:auto;}
+.cs-divider{width:48px;height:2px;background:linear-gradient(90deg,var(--purple),transparent);border-radius:2px;margin:0 auto 36px;}
+.cs-features{display:flex;flex-direction:column;gap:12px;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;box-shadow:0 4px 24px var(--shadow);position:relative;overflow:hidden;}
+.cs-features::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--purple),transparent);}
+.cs-features-label{font-size:10px;letter-spacing:3px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;}
+.cs-feature{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.cs-feature:last-child{border-bottom:none;padding-bottom:0;}
+.cs-feature-icon{width:32px;height:32px;background:var(--purple-dim);border:1px solid var(--purple-border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:1px;}
+.cs-feature-text{flex:1;}
+.cs-feature-title{font-size:13px;font-weight:600;margin-bottom:2px;}
+.cs-feature-desc{font-size:11px;color:var(--text-dim);line-height:1.5;}
+.cs-back{display:inline-flex;align-items:center;gap:8px;margin-top:28px;padding:11px 24px;border-radius:var(--radius);background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);font-family:var(--font);font-size:12px;font-weight:500;text-decoration:none;cursor:pointer;transition:all .2s;}
+.cs-back:hover{border-color:var(--purple-border);color:var(--purple);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+@media(max-width:768px){
+  .nav{padding:0 20px;} .nav-date{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- PASSCODE -->
+<div id="passcode-screen">
+  <div class="pc-box">
+    <div class="pc-logo">CB Dashboard</div>
+    <div class="pc-title">Quarterly Report</div>
+    <div class="pc-sub">Enter the team passcode to continue</div>
+    <input type="password" class="pc-input" id="pc-input" placeholder="· · · · · · · ·" maxlength="30" autocomplete="off">
+    <button class="pc-btn" onclick="doPasscode()">ENTER</button>
+    <div class="pc-err" id="pc-err"></div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav" id="nav" style="display:none">
+  <a class="nav-brand" href="index.html">
+    <div class="nav-dot"></div>
+    <div class="nav-name">CB <span>Dashboard</span></div>
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">Home</a>
+    <a class="nav-link" href="reminder.html">Reminder</a>
+    <a class="nav-link" href="listing.html">Listing</a>
+    <a class="nav-link active" href="quarterly.html">Quarterly</a>
+  </div>
+  <div class="nav-right">
+    <span class="nav-date" id="nav-date"></span>
+    <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">🌙</button>
+    <a class="nav-settings-btn" href="settings.html" title="Settings">⚙️</a>
+    <button class="nav-logout" onclick="logout()">LOGOUT</button>
+  </div>
+</nav>
+
+<div id="app" style="display:none">
+  <div class="cs-wrap">
+    <div class="cs-inner">
+      <div class="cs-badge">
+        <span class="cs-badge-dot"></span>
+        In Development
+      </div>
+      <span class="cs-icon">📊</span>
+      <div class="cs-title">Quarterly<br><span>Coming Soon</span></div>
+      <div class="cs-sub">The quarterly report dashboard is currently being developed. It will bring deeper analytics across three months of chargeback data.</div>
+      <div class="cs-divider"></div>
+      <div class="cs-features">
+        <div class="cs-features-label">What's coming</div>
+        <div class="cs-feature">
+          <div class="cs-feature-icon">📂</div>
+          <div class="cs-feature-text">
+            <div class="cs-feature-title">Upload-Based Generation</div>
+            <div class="cs-feature-desc">Upload quarterly Excel data and auto-generate the full report.</div>
+          </div>
+        </div>
+        <div class="cs-feature">
+          <div class="cs-feature-icon">👥</div>
+          <div class="cs-feature-text">
+            <div class="cs-feature-title">PIC Breakdown Table</div>
+            <div class="cs-feature-desc">Per-PIC counts of Contest, Pending, and Pre-Arbi cases still open.</div>
+          </div>
+        </div>
+        <div class="cs-feature">
+          <div class="cs-feature-icon">📈</div>
+          <div class="cs-feature-text">
+            <div class="cs-feature-title">Percentage-Based Analytics</div>
+            <div class="cs-feature-desc">Trend breakdowns across ~2,900–3,400 rows of quarterly data.</div>
+          </div>
+        </div>
+        <div class="cs-feature">
+          <div class="cs-feature-icon">📄</div>
+          <div class="cs-feature-text">
+            <div class="cs-feature-title">PDF Export</div>
+            <div class="cs-feature-desc">Export full quarterly reports as polished PDF documents.</div>
+          </div>
+        </div>
+      </div>
+      <a class="cs-back" href="index.html">← Back to Dashboard</a>
+    </div>
+  </div>
+</div>
+
+<script>
+// THEME
+(function(){
+  const t=localStorage.getItem('cb_theme')||'dark';
+  document.documentElement.setAttribute('data-theme',t);
+})();
+function toggleTheme(){
+  const cur=document.documentElement.getAttribute('data-theme');
+  const next=cur==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  localStorage.setItem('cb_theme',next);
+  document.getElementById('theme-btn').textContent=next==='dark'?'🌙':'☀️';
+}
+function updateThemeBtn(){
+  const t=document.documentElement.getAttribute('data-theme');
+  const btn=document.getElementById('theme-btn');
+  if(btn) btn.textContent=t==='dark'?'🌙':'☀️';
+}
+updateThemeBtn();
+
+// HASH
+async function hashPasscode(plain){
+  const encoded=new TextEncoder().encode(plain);
+  const buf=await crypto.subtle.digest('SHA-256',encoded);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// PASSCODE
+function doPasscode(){
+  const val=document.getElementById('pc-input').value.trim();
+  const err=document.getElementById('pc-err');
+  if(!val){err.textContent='Enter passcode.';return;}
+  async function tryLogin(){
+    try{
+      const stored=await window._get(window._ref(window._db,'config/passcode')).then(s=>s.val());
+      const hashed=await hashPasscode(val);
+      if(!stored){
+        await window._set(window._ref(window._db,'config/passcode'),hashed);
+        sessionStorage.setItem('cb_auth',val); enterApp();
+      } else if(hashed===stored){
+        sessionStorage.setItem('cb_auth',val); enterApp();
+      } else {
+        err.textContent='Incorrect passcode.';
+        const inp=document.getElementById('pc-input');
+        inp.classList.add('err'); setTimeout(()=>inp.classList.remove('err'),400);
+      }
+    }catch(e){err.textContent='Cannot connect.';}
+  }
+  const execLogin=()=>{(window._authReady||Promise.resolve()).then(tryLogin).catch(tryLogin);};
+  if(window.firebaseReady)execLogin();
+  else window.addEventListener('firebaseReady',execLogin,{once:true});
+}
+document.getElementById('pc-input').addEventListener('keydown',e=>{if(e.key==='Enter')doPasscode();});
+
+// AUTO-LOGIN
+(function(){
+  const stored=sessionStorage.getItem('cb_auth');
+  if(stored){
+    document.getElementById('passcode-screen').style.display='none';
+    async function verifyAndEnter(){
+      async function doCheck(){
+        try{
+          const dbHash=await window._get(window._ref(window._db,'config/passcode')).then(s=>s.val());
+          const inputHash=await hashPasscode(stored);
+          if(inputHash===dbHash){ enterApp(); }
+          else{ sessionStorage.removeItem('cb_auth'); document.getElementById('passcode-screen').style.display='flex'; }
+        }catch(e){ enterApp(); }
+      }
+      (window._authReady||Promise.resolve()).then(doCheck).catch(doCheck);
+    }
+    if(window.firebaseReady) verifyAndEnter();
+    else window.addEventListener('firebaseReady', verifyAndEnter, {once:true});
+  }
+})();
+
+function enterApp(){
+  document.getElementById('passcode-screen').style.display='none';
+  document.getElementById('nav').classList.add('show');
+  document.getElementById('app').style.display='block';
+  document.getElementById('nav-date').textContent=
+    new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'}).toUpperCase();
+}
+function logout(){sessionStorage.removeItem('cb_auth');location.reload();}
+</script>
+</body>
+</html>

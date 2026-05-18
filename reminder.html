@@ -80,6 +80,9 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .theme-btn:hover{border-color:var(--amber);}
 .nav-logout{background:none;border:1px solid var(--border);color:var(--text-dim);font-family:var(--font);font-size:11px;padding:6px 14px;border-radius:6px;cursor:pointer;transition:all .2s;letter-spacing:1px;}
 .nav-logout:hover{border-color:var(--red);color:var(--red);}
+/* SETTINGS ICON BTN */
+.nav-settings-btn{width:34px;height:34px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all .2s;text-decoration:none;color:var(--text-dim);}
+.nav-settings-btn:hover{border-color:var(--amber);color:var(--text);}
 
 /* STICKY PROGRESS BAR */
 #sticky-progress{position:sticky;top:60px;z-index:9;background:var(--nav-bg);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:8px 40px;display:none;align-items:center;gap:16px;transition:background .3s,border-color .3s;}
@@ -323,11 +326,12 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <a href="index.html" class="nav-link">Home</a>
     <a href="reminder.html" class="nav-link active">Reminder</a>
     <a href="listing.html" class="nav-link">Listing</a>
-    <a href="settings.html" class="nav-link">Settings</a>
+    <a href="quarterly.html" class="nav-link">Quarterly</a>
   </div>
   <div class="nav-right">
     <div class="nav-date" id="nav-date"></div>
     <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+    <a class="nav-settings-btn" href="settings.html" title="Settings">⚙️</a>
     <button class="nav-logout" onclick="logout()">LOGOUT</button>
   </div>
 </nav>

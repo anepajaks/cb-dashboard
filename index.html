@@ -34,6 +34,7 @@
   --radius:12px; --radius-lg:20px;
   --amber:#f5a623; --amber-dim:rgba(245,166,35,0.10);
   --teal:#00bfa5; --teal-dim:rgba(0,191,165,0.10);
+  --purple:#9b59b6; --purple-dim:rgba(155,89,182,0.10); --purple-border:rgba(155,89,182,0.28);
   --green:#2ecc71; --red:#e55353; --blue:#4a9eff;
 }
 [data-theme="dark"] {
@@ -90,12 +91,14 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .page-title{font-size:clamp(28px,4vw,42px);font-weight:800;line-height:1.1;}
 
 /* STATUS CARDS */
-.status-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:48px;animation:fadeUp .4s ease .08s both;}
+.status-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-bottom:48px;animation:fadeUp .4s ease .08s both;}
 .status-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 32px;position:relative;overflow:hidden;transition:all .2s;box-shadow:0 2px 12px var(--shadow);}
 .status-card:hover{border-color:rgba(245,166,35,.3);transform:translateY(-2px);box-shadow:0 8px 32px var(--shadow);}
 .status-card.teal-card:hover{border-color:rgba(0,191,165,.3);}
+.status-card.purple-card:hover{border-color:rgba(155,89,182,.3);}
 .status-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--amber),transparent);}
 .status-card.teal-card::before{background:linear-gradient(90deg,#00bfa5,transparent);}
+.status-card.purple-card::before{background:linear-gradient(90deg,#9b59b6,transparent);}
 .status-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
 .status-card-type{font-size:10px;letter-spacing:3px;color:var(--text-muted);text-transform:uppercase;}
 .status-badge{font-size:10px;letter-spacing:1px;padding:4px 10px;border-radius:20px;font-weight:600;}
@@ -109,9 +112,11 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .card-btn.primary{background:var(--amber);color:#0a0a0f;}
 .card-btn.primary:hover{opacity:.85;transform:translateY(-1px);}
 .teal-card .card-btn.primary{background:var(--teal);}
+.purple-card .card-btn.primary{background:var(--purple);}
 .card-btn.secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
 .card-btn.secondary:hover{border-color:var(--amber);color:var(--amber);transform:translateY(-1px);}
 .teal-card .card-btn.secondary:hover{border-color:var(--teal);color:var(--teal);}
+.purple-card .card-btn.secondary:hover{border-color:var(--purple);color:var(--purple);}
 
 /* HISTORY */
 .section-label{font-size:11px;letter-spacing:3px;color:var(--text-muted);text-transform:uppercase;margin-bottom:16px;animation:fadeUp .4s ease .15s both;}
@@ -119,6 +124,13 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .history-tab{padding:8px 20px;border-radius:8px;font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text-dim);transition:all .2s;}
 .history-tab.active{background:var(--amber);color:#0a0a0f;font-weight:600;}
 .history-tab.listing-tab.active{background:var(--teal);}
+.history-tab.quarterly-tab.active{background:var(--purple);color:#fff;}
+/* SETTINGS ICON BTN */
+.nav-settings-btn{width:34px;height:34px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all .2s;text-decoration:none;color:var(--text-dim);}
+.nav-settings-btn:hover{border-color:var(--amber);color:var(--text);}
+/* COMING SOON BADGE */
+.cs-pill{display:inline-flex;align-items:center;gap:6px;background:var(--purple-dim);border:1px solid var(--purple-border);border-radius:20px;padding:4px 12px;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--purple);margin-bottom:12px;}
+.cs-pill-dot{width:5px;height:5px;background:var(--purple);border-radius:50%;animation:pulse 2s infinite;}
 .history-list{display:flex;flex-direction:column;gap:10px;animation:fadeUp .4s ease .25s both;}
 
 /* COLLAPSIBLE MONTH GROUP */
@@ -202,6 +214,9 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .sk-group-header{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
 .sk-group-body{padding:12px;display:flex;flex-direction:column;gap:6px;}
 
+@media(max-width:900px){
+  .status-grid{grid-template-columns:1fr 1fr;}
+}
 @media(max-width:768px){
   .nav{padding:0 20px;} .nav-date{display:none;}
   .main{padding:28px 20px;} .status-grid{grid-template-columns:1fr;}
@@ -231,11 +246,12 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <a href="reminder.html" class="nav-link">Reminder</a>
     <a href="listing.html" class="nav-link">Listing</a>
     <a href="listing.html" class="nav-link" id="analytics-shortcut" style="display:none">&#128202; Analytics</a>
-    <a href="settings.html" class="nav-link">Settings</a>
+    <a href="quarterly.html" class="nav-link">Quarterly</a>
   </div>
   <div class="nav-right">
     <div class="nav-date" id="nav-date"></div>
     <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+    <a class="nav-settings-btn" href="settings.html" title="Settings">⚙️</a>
     <button class="nav-logout" onclick="logout()">LOGOUT</button>
   </div>
 </nav>
@@ -248,6 +264,13 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     </div>
     <!-- STATUS CARDS — skeletons shown until data loads -->
     <div class="status-grid" id="status-grid-skeleton">
+      <div class="sk-card">
+        <div class="sk-row"><span class="sk sk-line sk-w30"></span><span class="sk sk-pill"></span></div>
+        <div class="sk sk-line sk-h28 sk-w60" style="margin-bottom:10px;"></div>
+        <div class="sk sk-line sk-w80" style="margin-bottom:6px;"></div>
+        <div class="sk sk-line sk-w40" style="margin-bottom:20px;"></div>
+        <div class="sk sk-btn"></div>
+      </div>
       <div class="sk-card">
         <div class="sk-row"><span class="sk sk-line sk-w30"></span><span class="sk sk-pill"></span></div>
         <div class="sk sk-line sk-h28 sk-w60" style="margin-bottom:10px;"></div>
@@ -282,12 +305,24 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         <div class="status-card-meta" id="listing-meta">Checking...</div>
         <div id="listing-actions"></div>
       </div>
+      <div class="status-card purple-card">
+        <div class="status-card-header">
+          <div class="status-card-type">Quarterly</div>
+          <div class="status-badge" style="background:rgba(155,89,182,.12);color:#9b59b6;border:1px solid rgba(155,89,182,.2);font-size:10px;letter-spacing:1px;padding:4px 10px;border-radius:20px;font-weight:600;">Coming Soon</div>
+        </div>
+        <div class="status-card-title">Quarterly Report</div>
+        <div class="status-card-meta">Quarterly analytics across<br>3 months of chargeback data</div>
+        <div>
+          <a href="quarterly.html" class="card-btn secondary" style="pointer-events:none;opacity:.4;cursor:not-allowed;">In Development</a>
+        </div>
+      </div>
     </div>
 
     <div class="section-label">History</div>
     <div class="history-tabs">
       <button class="history-tab active" onclick="switchTab('reminder')">Reminders</button>
       <button class="history-tab listing-tab" onclick="switchTab('listing')">Listings</button>
+      <button class="history-tab quarterly-tab" onclick="switchTab('quarterly')">Quarterly</button>
     </div>
 
     <!-- HISTORY skeleton shown until data loads -->
@@ -572,7 +607,22 @@ function updateListingCard(){
 // HISTORY — Month/Week collapsible
 function switchTab(tab){
   currentTab=tab;
-  document.querySelectorAll('.history-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='reminder')||(i===1&&tab==='listing')));
+  document.querySelectorAll('.history-tab').forEach(t=>{
+    t.classList.remove('active');
+    if((tab==='reminder'&&t.textContent==='Reminders')||
+       (tab==='listing'&&t.textContent==='Listings')||
+       (tab==='quarterly'&&t.textContent==='Quarterly')){
+      t.classList.add('active');
+    }
+  });
+  if(tab==='quarterly'){
+    // Ensure skeleton is hidden and list is visible even if data hasn't loaded yet
+    document.getElementById('history-skeleton').style.display='none';
+    const list=document.getElementById('history-list');
+    list.style.display='';
+    list.innerHTML=`<div class="empty-state"><div class="empty-icon">📊</div>No quarterly reports generated yet</div>`;
+    return;
+  }
   if(_remindersLoaded&&_listingsLoaded) renderHistory();
 }
 
