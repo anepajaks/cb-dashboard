@@ -655,7 +655,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   </div>
   <div class="an-grid">
     <div class="an-card">
-      <div class="an-card-ttl">Top 5 Merchants (Actionable)</div>
+      <div class="an-card-ttl">Top 10 Merchants (All Transactions)</div>
       <div class="bar-list" id="merch-bars2"></div>
     </div>
     <div class="an-card">
@@ -1615,7 +1615,12 @@ function renderChannelBars(){
   var fv=document.getElementById('ch-filter').value;
   var cases=Object.values(D.cases||{});
   var src=fv==='act'?cases.filter(function(c){return isAct(c.status);}):cases;
-  var cm={};src.forEach(function(c){var ch=c.channel||'Unknown';cm[ch]=(cm[ch]||0)+1;});
+  var cm={};
+  src.forEach(function(c){
+    var ch=c.channel||'Unknown';
+    var tranCount=Array.isArray(c.trans)&&c.trans.length>0?c.trans.length:1;
+    cm[ch]=(cm[ch]||0)+tranCount;
+  });
   var sorted=Object.entries(cm).sort(function(a,b){return b[1]-a[1];});
   var mx=sorted.length?sorted[0][1]:1;
   document.getElementById('ch-bars').innerHTML=sorted.map(function(e){
@@ -1627,9 +1632,14 @@ function renderChannelBars(){
 }
 
 function renderMerchBars2(cases){
-  var act=cases.filter(function(c){return isAct(c.status);});
-  var mm={};act.forEach(function(c){var m=c.merchant||'Unknown';mm[m]=(mm[m]||0)+1;});
-  var top=Object.entries(mm).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
+  // All cases (all statuses), count transactions not tickets, top 10
+  var mm={};
+  cases.forEach(function(c){
+    var m=c.merchant||'Unknown';
+    var tranCount=Array.isArray(c.trans)&&c.trans.length>0?c.trans.length:1;
+    mm[m]=(mm[m]||0)+tranCount;
+  });
+  var top=Object.entries(mm).sort(function(a,b){return b[1]-a[1];}).slice(0,10);
   var mx=top.length?top[0][1]:1;
   var el=document.getElementById('merch-bars2');if(!el)return;
   el.innerHTML=top.length?top.map(function(e){
@@ -1637,7 +1647,7 @@ function renderMerchBars2(cases){
     return '<div class="bar-row"><div class="bar-lbl" title="'+e[0]+'">'+e[0]+'</div>'
       +'<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:var(--purple)"></div></div>'
       +'<div class="bar-val">'+e[1]+'</div></div>';
-  }).join(''):'<div style="color:var(--text-muted);font-size:12px;padding:8px 0">No actionable cases</div>';
+  }).join(''):'<div style="color:var(--text-muted);font-size:12px;padding:8px 0">No data</div>';
 }
 
 function renderHeatmap(cases){
