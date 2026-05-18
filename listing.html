@@ -1622,6 +1622,7 @@ function normChannel(raw){
   if(r.indexOf('mydebit')>-1||r.indexOf('my_debit')>-1)return'MyDebit';
   if(r.indexOf('alipay')>-1)return'Alipay+';
   if(r.indexOf('grabpay')>-1||r.indexOf('gupop')>-1)return'GrabPay';
+  if(r.indexOf('boost')>-1)return'Boost';
   if(r.indexOf('duitnow')>-1||r.indexOf('rpp_rtp')>-1||r.indexOf('mb2u')>-1||r.indexOf('qrpay')>-1)return'DuitNowQR';
   if(r.indexOf('shopeepay')>-1)return'ShopeePay';
   if(r.indexOf('tng')>-1)return'TNG';
@@ -1635,7 +1636,7 @@ function normChannelGroup(cat){
 }
 var CHANNEL_COLORS={
   'Visa':'#1a1f71','Mastercard':'#eb6209','MyDebit':'#888',
-  'Alipay+':'#1677ff','GrabPay':'#00b14f','DuitNowQR':'#00bfa5',
+  'Alipay+':'#1677ff','GrabPay':'#00b14f','Boost':'#1dc8d4','DuitNowQR':'#00bfa5',
   'ShopeePay':'#f05d23','TNG':'#0066b3','WeChatPay':'#07c160',
   'PayMaya':'#512888','UnionPay':'#c0392b','Other':'#4a4a6a'
 };
