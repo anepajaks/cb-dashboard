@@ -631,7 +631,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <div class="donut-wrap">
         <div class="donut-svg-rel">
           <svg id="donut-svg" width="130" height="130" viewBox="0 0 130 130"></svg>
-          <div class="donut-ctr"><div class="donut-ctr-val" id="donut-total">0</div><div class="donut-ctr-lbl">Total</div></div>
+          <div class="donut-ctr"><div class="donut-ctr-val" id="donut-total">0</div><div class="donut-ctr-lbl">Trans</div></div>
         </div>
         <div class="donut-leg" id="donut-leg"></div>
       </div>
@@ -1456,9 +1456,20 @@ function renderAnalytics(){
 var _donutSegs=[];
 
 function renderDonut(cases){
-  var cnt={};cases.forEach(function(c){cnt[c.status]=(cnt[c.status]||0)+1;});
-  var total=cases.length;
-  document.getElementById('donut-total').textContent=total;
+  // Count TRANSACTIONS per status (not unique ticket IDs).
+  // Each case has a trans[] array; if empty/missing, count as 1 transaction.
+  var cnt={};
+  var totalTrans=0;
+  cases.forEach(function(c){
+    var tranCount=Array.isArray(c.trans)&&c.trans.length>0?c.trans.length:1;
+    cnt[c.status]=(cnt[c.status]||0)+tranCount;
+    totalTrans+=tranCount;
+  });
+  // Display: prefer stored total_transactions (authoritative source from Excel parse)
+  var displayTotal=D&&D.total_transactions?D.total_transactions:totalTrans;
+  document.getElementById('donut-total').textContent=displayTotal;
+  // Math: always use totalTrans (what we actually summed) so percentages add up to 100%
+  var total=totalTrans||1;
   var entries=Object.entries(cnt).sort(function(a,b){return b[1]-a[1];});
   var FALLBACK_COLS=['#e67e22','#1abc9c','#e91e63','#3498db','#ff5722','#8bc34a','#9c27b0','#00bcd4'];
   var fbIdx=0;

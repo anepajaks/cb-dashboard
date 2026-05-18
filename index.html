@@ -108,6 +108,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .card-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:var(--radius);font-family:var(--font);font-size:12px;font-weight:600;letter-spacing:.5px;cursor:pointer;transition:all .2s;text-decoration:none;border:none;}
 .card-btn.primary{background:var(--amber);color:#0a0a0f;}
 .card-btn.primary:hover{opacity:.85;transform:translateY(-1px);}
+.teal-card .card-btn.primary{background:var(--teal);}
 .card-btn.secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
 .card-btn.secondary:hover{border-color:var(--amber);color:var(--amber);transform:translateY(-1px);}
 .teal-card .card-btn.secondary:hover{border-color:var(--teal);color:var(--teal);}
@@ -607,12 +608,14 @@ function renderHistory(){
     return;
   }
 
-  // LISTINGS: group by year only, newest first within year
+  // LISTINGS: group by year only — use year from the key (e.g. "June_2025" → 2025)
+  // NOT generated_at (which is when it was saved, potentially a different year)
   if(currentTab==='listing'){
     const yearGroups={};
     keys.forEach(key=>{
-      const rec=data[key];
-      const yr=new Date(rec.generated_at||0).getFullYear().toString();
+      const parts=key.split('_');
+      const parsedYr=parts.length>=2?parseInt(parts[parts.length-1]):NaN;
+      const yr=(!isNaN(parsedYr)&&parsedYr>2000)?parsedYr.toString():new Date((data[key].generated_at)||0).getFullYear().toString();
       if(!yearGroups[yr])yearGroups[yr]=[];
       yearGroups[yr].push(key);
     });
